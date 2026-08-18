@@ -1,0 +1,2078 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>视频云平台智能体应用方案</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* ======================================
+           FIXED 16:9 STAGE: MANDATORY BASE
+           ====================================== */
+        html, body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+            background: #0a0e27;
+        }
+
+        .deck-viewport {
+            position: fixed;
+            inset: 0;
+            overflow: hidden;
+            background: #0a0e27;
+        }
+
+        .deck-stage {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 1920px;
+            height: 1080px;
+            overflow: hidden;
+            transform-origin: 0 0;
+        }
+
+        .slide {
+            position: absolute;
+            inset: 0;
+            width: 1920px;
+            height: 1080px;
+            overflow: hidden;
+            display: block;
+            visibility: hidden;
+            opacity: 0;
+            pointer-events: none;
+            background: #0a0e27;
+        }
+
+        .slide.active {
+            visibility: visible;
+            opacity: 1;
+            pointer-events: auto;
+            z-index: 1;
+        }
+
+        img, video, canvas, svg {
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        /* ======================================
+           DESIGN SYSTEM
+           ====================================== */
+        :root {
+            --primary: #0066ff;
+            --secondary: #00d4ff;
+            --bg-dark: #0a0e27;
+            --bg-card: #1a1f3a;
+            --bg-lighter: #242b45;
+            --text-light: #ffffff;
+            --text-dim: #8b92b2;
+            --text-dimmer: #5a6277;
+            --accent-glow: rgba(0, 102, 255, 0.3);
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        .slide {
+            font-family: 'Noto Sans SC', sans-serif;
+            color: var(--text-light);
+        }
+
+        /* 背景装饰 */
+        .bg-grid {
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 80px 80px;
+            opacity: 0.4;
+            pointer-events: none;
+        }
+
+        .bg-glow {
+            position: absolute;
+            top: -200px;
+            right: -200px;
+            width: 800px;
+            height: 800px;
+            background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+            border-radius: 50%;
+            filter: blur(80px);
+            pointer-events: none;
+        }
+
+        /* 通用布局 */
+        .slide-content {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            padding: 60px 120px 100px 120px;
+            z-index: 2;
+        }
+
+        /* 标签 */
+        .chip {
+            display: inline-block;
+            padding: 12px 28px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            font-size: 18px;
+            font-weight: 500;
+            border-radius: 50px;
+            letter-spacing: 1px;
+        }
+
+        /* 标题 */
+        h1 {
+            font-size: 96px;
+            font-weight: 700;
+            line-height: 1.1;
+            margin: 50px 0 40px 0;
+            background: linear-gradient(135deg, #ffffff, var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        h2 {
+            font-size: 72px;
+            font-weight: 700;
+            line-height: 1.2;
+            margin: 0 0 48px 0;
+            background: linear-gradient(135deg, #ffffff, var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        h3 {
+            font-size: 48px;
+            font-weight: 600;
+            line-height: 1.3;
+            margin: 0 0 32px 0;
+            color: var(--text-light);
+        }
+
+        p {
+            font-size: 28px;
+            line-height: 1.6;
+            color: var(--text-dim);
+            margin: 0 0 24px 0;
+        }
+
+        /* 卡片 */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 40px;
+        }
+
+        .card-title {
+            font-size: 36px;
+            font-weight: 600;
+            color: var(--text-light);
+            margin: 0 0 20px 0;
+        }
+
+        .card-text {
+            font-size: 24px;
+            line-height: 1.6;
+            color: var(--text-dim);
+            margin: 0;
+        }
+
+        /* 列表 */
+        ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        li {
+            font-size: 28px;
+            line-height: 1.8;
+            color: var(--text-dim);
+            padding-left: 40px;
+            position: relative;
+            margin-bottom: 16px;
+        }
+
+        li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 18px;
+            width: 16px;
+            height: 16px;
+            background: var(--primary);
+            border-radius: 50%;
+        }
+
+        /* 导航控制 */
+        .deck-controls {
+            position: fixed;
+            left: 50%;
+            bottom: 40px;
+            transform: translateX(-50%);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            background: rgba(26, 31, 58, 0.95);
+            padding: 16px 32px;
+            border-radius: 50px;
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-btn {
+            width: 48px;
+            height: 48px;
+            border: none;
+            background: var(--primary);
+            color: white;
+            font-size: 24px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .nav-btn:hover {
+            background: var(--secondary);
+            transform: scale(1.1);
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            transform: scale(1);
+        }
+
+        .slide-counter {
+            font-family: 'Space Mono', monospace;
+            font-size: 18px;
+            color: var(--text-light);
+            font-weight: 500;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        /* 响应式 */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.2s !important;
+            }
+        }
+
+        /* ======================================
+           封面幻灯片特殊样式
+           ====================================== */
+        .cover-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 100%;
+        }
+
+        .cover-left {
+            flex: 1;
+            max-width: 900px;
+        }
+
+        .cover-right {
+            width: 700px;
+            height: 520px;
+            position: relative;
+        }
+
+        .stats-grid {
+            display: flex;
+            gap: 32px;
+            margin-top: 80px;
+        }
+
+        .stat-card {
+            flex: 1;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 36px 28px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 72px;
+            font-weight: 700;
+            font-family: 'Space Mono', monospace;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 12px;
+        }
+
+        .stat-label {
+            font-size: 20px;
+            color: var(--text-dim);
+            font-weight: 500;
+        }
+
+        .agent-icon {
+            position: absolute;
+            width: 240px;
+            height: 240px;
+            border-radius: 24px;
+            background: var(--bg-card);
+            border: 2px solid rgba(0, 102, 255, 0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .agent-1 { top: 0; left: 0; }
+        .agent-2 { bottom: 0; right: 0; }
+
+        .icon-inner {
+            width: 140px;
+            height: 140px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 64px;
+            font-weight: 700;
+            font-family: 'Space Mono', monospace;
+            color: white;
+            box-shadow: 0 20px 60px rgba(0, 102, 255, 0.4);
+        }
+
+        .icon-label {
+            font-size: 24px;
+            font-weight: 500;
+            color: var(--text-light);
+        }
+
+        .connection-line {
+            position: absolute;
+            top: 120px;
+            left: 120px;
+            width: 340px;
+            height: 240px;
+            border: 2px dashed rgba(0, 212, 255, 0.3);
+            border-radius: 40px;
+        }
+
+        /* 两栏布局 */
+        .two-column {
+            display: flex;
+            gap: 60px;
+            height: calc(100% - 160px);
+        }
+
+        .column {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .column-title {
+            font-size: 32px;
+            font-weight: 600;
+            color: var(--secondary);
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        /* 流程步骤 */
+        .flow-step {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 32px;
+            position: relative;
+        }
+
+        .step-number {
+            position: absolute;
+            top: -16px;
+            left: 32px;
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 700;
+            color: white;
+        }
+
+        .step-title {
+            font-size: 28px;
+            font-weight: 600;
+            color: var(--text-light);
+            margin: 20px 0 16px 0;
+        }
+
+        .step-text {
+            font-size: 22px;
+            line-height: 1.6;
+            color: var(--text-dim);
+        }
+
+        /* 对话框样式 */
+        .qa-pair {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 32px;
+            margin-bottom: 24px;
+        }
+
+        .question {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--secondary);
+            margin-bottom: 16px;
+            padding-left: 32px;
+            position: relative;
+        }
+
+        .question::before {
+            content: 'Q';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 24px;
+            height: 24px;
+            background: var(--primary);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .answer {
+            font-size: 22px;
+            line-height: 1.6;
+            color: var(--text-dim);
+            padding-left: 32px;
+            position: relative;
+        }
+
+        .answer::before {
+            content: 'A';
+            position: absolute;
+            left: 0;
+            top: 4px;
+            width: 24px;
+            height: 24px;
+            background: var(--secondary);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+    <div class="deck-viewport">
+        <div class="deck-stage">
+            <!-- 幻灯片1: 封面 -->
+            <div class="slide active">
+                <div class="bg-grid"></div>
+                <div class="bg-glow"></div>
+                <div class="slide-content">
+                    <div class="cover-content">
+                        <div class="cover-left">
+                            <div class="chip">AI驱动监控方案</div>
+                            <h1>视频云平台<br>智能体应用方案</h1>
+                            <p style="font-size: 32px;">场景智能巡查员 × 预警研判助手<br>让AI替代人眼，24小时守护安全</p>
+
+                            <div class="stats-grid">
+                                <div class="stat-card">
+                                    <div class="stat-number">2</div>
+                                    <div class="stat-label">核心智能体</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-number">24/7</div>
+                                    <div class="stat-label">全天候监控</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-number">3+</div>
+                                    <div class="stat-label">应用场景</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="cover-right">
+                            <div class="agent-icon agent-1">
+                                <div class="icon-inner">AI</div>
+                                <div class="icon-label">巡查员</div>
+                            </div>
+                            <div class="agent-icon agent-2">
+                                <div class="icon-inner">AI</div>
+                                <div class="icon-label">研判助手</div>
+                            </div>
+                            <div class="connection-line"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 幻灯片2: 总体建设思路（重新设计为框架图） -->
+            <div class="slide">
+                <div class="bg-grid"></div>
+                <div class="slide-content" style="padding: 60px 120px;">
+                    <div class="chip">方案概述</div>
+                    <h2 style="margin: 40px 0 24px 0;">总体建设思路</h2>
+                    <p style="font-size: 24px; color: var(--text-dim); margin-bottom: 32px;">
+                        第一期采用多模态大模型对定时截图进行分析，智能体组织业务流程，视频云平台提供基础能力
+                    </p>
+
+                    <!-- 三层架构图 -->
+                    <div style="display: flex; flex-direction: column; gap: 24px;">
+                        <!-- 顶层：智能体层 -->
+                        <div style="display: flex; gap: 24px; align-items: center;">
+                            <div style="width: 160px; text-align: right;">
+                                <div style="font-size: 24px; font-weight: 600; color: var(--secondary);">智能体层</div>
+                                <div style="font-size: 16px; color: var(--text-dimmer); margin-top: 4px;">业务编排</div>
+                            </div>
+                            <div style="flex: 1; display: flex; gap: 20px;">
+                                <div class="card" style="flex: 1; text-align: center; padding: 24px; background: linear-gradient(135deg, rgba(0, 102, 255, 0.1), rgba(0, 212, 255, 0.1)); border: 2px solid var(--primary);">
+                                    <div style="font-size: 40px; margin-bottom: 12px;">🔍</div>
+                                    <div style="font-size: 22px; font-weight: 600; color: var(--text-light); margin-bottom: 8px;">场景智能巡查员</div>
+                                    <div style="font-size: 16px; color: var(--text-dim);">组织点位、场景、任务</div>
+                                </div>
+                                <div style="font-size: 32px; color: var(--secondary); display: flex; align-items: center;">⇄</div>
+                                <div class="card" style="flex: 1; text-align: center; padding: 24px; background: linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(0, 102, 255, 0.1)); border: 2px solid var(--secondary);">
+                                    <div style="font-size: 40px; margin-bottom: 12px;">🎯</div>
+                                    <div style="font-size: 22px; font-weight: 600; color: var(--text-light); margin-bottom: 8px;">预警研判助手</div>
+                                    <div style="font-size: 16px; color: var(--text-dim);">解释、分级、合并、汇总</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 连接线 -->
+                        <div style="display: flex; justify-content: center;">
+                            <div style="width: 3px; height: 40px; background: linear-gradient(180deg, var(--primary), var(--secondary)); border-radius: 2px; position: relative;">
+                                <div style="position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 10px solid var(--secondary);"></div>
+                            </div>
+                        </div>
+
+                        <!-- 中层：AI能力层 -->
+                        <div style="display: flex; gap: 24px; align-items: center;">
+                            <div style="width: 160px; text-align: right;">
+                                <div style="font-size: 24px; font-weight: 600; color: var(--secondary);">AI能力层</div>
+                                <div style="font-size: 16px; color: var(--text-dimmer); margin-top: 4px;">图像理解</div>
+                            </div>
+                            <div class="card" style="flex: 1; padding: 24px; background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1)); border: 2px solid #667eea;">
+                                <div style="display: flex; align-items: center; gap: 24px;">
+                                    <div style="font-size: 56px;">👁️</div>
+                                    <div style="flex: 1;">
+                                        <div style="font-size: 24px; font-weight: 600; color: var(--text-light); margin-bottom: 8px;">多模态大模型</div>
+                                        <div style="font-size: 18px; color: var(--text-dim);">
+                                            理解图片内容、识别人员、判断位置、评估画面质量、分析设施状态
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 连接线 -->
+                        <div style="display: flex; justify-content: center;">
+                            <div style="width: 3px; height: 40px; background: linear-gradient(180deg, #667eea, #4ecdc4); border-radius: 2px; position: relative;">
+                                <div style="position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 10px solid #4ecdc4;"></div>
+                            </div>
+                        </div>
+
+                        <!-- 底层：平台能力层 -->
+                        <div style="display: flex; gap: 24px; align-items: center;">
+                            <div style="width: 160px; text-align: right;">
+                                <div style="font-size: 24px; font-weight: 600; color: var(--secondary);">平台能力层</div>
+                                <div style="font-size: 16px; color: var(--text-dimmer); margin-top: 4px;">基础支撑</div>
+                            </div>
+                            <div class="card" style="flex: 1; padding: 24px; background: linear-gradient(135deg, rgba(78, 205, 196, 0.1), rgba(68, 160, 141, 0.1)); border: 2px solid #4ecdc4;">
+                                <div style="display: flex; align-items: center; gap: 24px;">
+                                    <div style="font-size: 56px;">📹</div>
+                                    <div style="flex: 1;">
+                                        <div style="font-size: 24px; font-weight: 600; color: var(--text-light); margin-bottom: 8px;">视频云平台</div>
+                                        <div style="font-size: 18px; color: var(--text-dim);">
+                                            点位管理、定时截图、实时直播、预警推送、反馈记录、权限控制
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 幻灯片3: 核心价值 -->
+            <div class="slide">
+                <div class="bg-grid"></div>
+                <div class="slide-content">
+                    <div class="chip">核心价值</div>
+                    <h2>为什么需要智能体？</h2>
+                    <div style="margin-top: 60px; display: flex; gap: 40px;">
+                        <div style="flex: 1;">
+                            <div class="card" style="height: 100%; display: flex; flex-direction: column; gap: 24px;">
+                                <div style="font-size: 64px;">😫</div>
+                                <div class="card-title">传统方式的痛点</div>
+                                <ul style="margin: 0;">
+                                    <li style="font-size: 24px;">需要逐个寻找点位、打开视频</li>
+                                    <li style="font-size: 24px;">必须一直盯着所有屏幕</li>
+                                    <li style="font-size: 24px;">人工疲劳容易遗漏异常</li>
+                                    <li style="font-size: 24px;">交接班信息整理耗时</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div style="flex: 1;">
+                            <div class="card" style="height: 100%; display: flex; flex-direction: column; gap: 24px;">
+                                <div style="font-size: 64px;">✨</div>
+                                <div class="card-title">智能体带来的改变</div>
+                                <ul style="margin: 0;">
+                                    <li style="font-size: 24px;">AI先检查全部点位</li>
+                                    <li style="font-size: 24px;">只看需要关注的视频</li>
+                                    <li style="font-size: 24px;">自动发现异常线索</li>
+                                    <li style="font-size: 24px;">一键生成交接摘要</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 幻灯片4: 智能体中心（入口菜单） -->
+            <div class="slide">
+                <div class="bg-grid"></div>
+                <div class="slide-content" style="padding: 0; display: flex; height: 100%;">
+                    <!-- 左侧智能体菜单 -->
+                    <div style="width: 280px; background: var(--bg-card); border-right: 1px solid var(--border-color); display: flex; flex-direction: column;">
+                        <!-- 顶部标题 -->
+                        <div style="padding: 24px 20px; border-bottom: 1px solid var(--border-color);">
+                            <div style="font-size: 11px; color: var(--text-dimmer); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px;">使用界面</div>
+                            <h3 style="font-size: 20px; margin: 0; color: var(--text-light);">智能体中心</h3>
+                            <p style="font-size: 13px; color: var(--text-dimmer); margin: 8px 0 0 0;">选择智能体开始工作</p>
+                        </div>
+
+                        <!-- 智能体列表 -->
+                        <div style="flex: 1; padding: 16px 0; overflow-y: auto;">
+                            <!-- 场景智能巡查员 - 展开状态 -->
+                            <div>
+                                <div style="padding: 12px 20px; background: var(--bg-lighter); cursor: pointer;">
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <div style="width: 36px; height: 36px; background: linear-gradient(135deg, var(--primary), var(--secondary)); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                            <span style="font-size: 16px; font-weight: 700; color: white;">巡查</span>
+                                        </div>
+                                        <div style="flex: 1;">
+                                            <div style="font-size: 16px; font-weight: 600; color: var(--text-light);">场景智能巡查员</div>
+                                        </div>
+                                        <div style="font-size: 12px; color: var(--text-dim);">▼</div>
+                                    </div>
+                                </div>
+
+                                <!-- 子场景1：观潮值守 -->
+                                <div style="padding: 10px 20px 10px 56px; opacity: 0.6; cursor: pointer;">
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <div style="font-size: 18px;">🌊</div>
+                                        <div style="font-size: 15px; color: var(--text-light);">观潮值守</div>
+                                    </div>
+                                </div>
+
+                                <!-- 子场景2：台风值守 -->
+                                <div style="padding: 10px 20px 10px 56px; opacity: 0.6; cursor: pointer;">
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <div style="font-size: 18px;">🌀</div>
+                                        <div style="font-size: 15px; color: var(--text-light);">台风值守</div>
+                                    </div>
+                                </div>
+
+                                <!-- 子场景3：防汛巡查 -->
+                                <div style="padding: 10px 20px 10px 56px; opacity: 0.6; cursor: pointer;">
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <div style="font-size: 18px;">🚰</div>
+                                        <div style="font-size: 15px; color: var(--text-light);">防汛巡查</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 预警研判助手 - 展开状态 -->
+                            <div style="margin-top: 8px;">
+                                <div style="padding: 12px 20px; background: var(--bg-lighter); cursor: pointer;">
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <div style="width: 36px; height: 36px; background: linear-gradient(135deg, var(--secondary), var(--primary)); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                            <span style="font-size: 16px; font-weight: 700; color: white;">预警</span>
+                                        </div>
+                                        <div style="flex: 1;">
+                                            <div style="font-size: 16px; font-weight: 600; color: var(--text-light);">预警研判助手</div>
+                                        </div>
+                                        <div style="font-size: 12px; color: var(--text-dim);">▼</div>
+                                    </div>
+                                </div>
+
+                                <!-- 子场景1：单条预警复核 -->
+                                <div style="padding: 10px 20px 10px 56px; opacity: 0.6; cursor: pointer;">
+                                    <div style="font-size: 15px; color: var(--text-light);">单条预警复核</div>
+                                </div>
+
+                                <!-- 子场景2：批量预警汇总 -->
+                                <div style="padding: 10px 20px 10px 56px; opacity: 0.6; cursor: pointer;">
+                                    <div style="font-size: 15px; color: var(--text-light);">批量预警汇总</div>
+                                </div>
+
+                                <!-- 子场景3：值班交接汇总 -->
+                                <div style="padding: 10px 20px 10px 56px; opacity: 0.6; cursor: pointer;">
+                                    <div style="font-size: 15px; color: var(--text-light);">值班交接汇总</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 底部说明 -->
+                        <div style="padding: 20px; border-top: 1px solid var(--border-color); font-size: 13px; color: var(--text-dimmer); line-height: 1.6;">
+                            💡 点击智能体或场景进入工作台
+                        </div>
+                    </div>
+
+                    <!-- 右侧预览展示区 -->
+                    <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 60px 80px;">
+                        <div style="text-align: center; margin-bottom: 48px;">
+                            <div style="font-size: 64px; margin-bottom: 24px;">🤖</div>
+                            <h2 style="font-size: 52px; margin: 0 0 24px 0;">两大协同智能体</h2>
+                            <p style="font-size: 24px; line-height: 1.6; color: var(--text-dim);">
+                                场景智能巡查员负责主动检查视频点位<br>
+                                预警研判助手负责整理异常线索<br>
+                                两者协同工作，覆盖巡查-研判全流程
+                            </p>
+                        </div>
+
+                        <!-- 统计数据网格 -->
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px;">
+                            <div class="card" style="padding: 28px; text-align: center;">
+                                <div style="font-size: 56px; font-weight: 700; color: var(--primary); margin-bottom: 12px;">24/7</div>
+                                <div style="font-size: 20px; color: var(--text-dim); font-weight: 500;">全天候在线</div>
+                            </div>
+                            <div class="card" style="padding: 28px; text-align: center;">
+                                <div style="font-size: 56px; font-weight: 700; color: var(--secondary); margin-bottom: 12px;">3+</div>
+                                <div style="font-size: 20px; color: var(--text-dim); font-weight: 500;">应用场景</div>
+                            </div>
+                            <div class="card" style="padding: 28px; text-align: center;">
+                                <div style="font-size: 56px; font-weight: 700; color: #4ecdc4; margin-bottom: 12px;">15</div>
+                                <div style="font-size: 20px; color: var(--text-dim); font-weight: 500;">监控点位</div>
+                            </div>
+                            <div class="card" style="padding: 28px; text-align: center;">
+                                <div style="font-size: 56px; font-weight: 700; color: #ffe66d; margin-bottom: 12px;">5</div>
+                                <div style="font-size: 20px; color: var(--text-dim); font-weight: 500;">待关注事件</div>
+                            </div>
+                        </div>
+
+                        <!-- 快捷提示 -->
+                        <div style="margin-top: 40px; padding: 24px; background: rgba(0, 212, 255, 0.1); border-radius: 16px; border-left: 4px solid var(--secondary);">
+                            <div style="font-size: 20px; color: var(--text-light); margin-bottom: 12px;">
+                                <strong>💡 快速开始</strong>
+                            </div>
+                            <div style="font-size: 18px; color: var(--text-dim); line-height: 1.6;">
+                                选择左侧智能体进入工作台，开始视频巡查或异常研判
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 幻灯片5: 场景智能巡查员 - 功能详解 -->
+            <div class="slide">
+                <div class="bg-grid"></div>
+                <div class="slide-content">
+                    <div class="chip">智能体01</div>
+                    <h2>场景智能巡查员</h2>
+                    <p style="font-size: 32px; color: var(--text-dim); margin-bottom: 48px;">
+                        根据业务场景自动加载点位，组织多屏监控，利用定时截图完成智能巡查
+                    </p>
+
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 32px;">
+                        <div class="card">
+                            <div class="card-title">✅ 核心能力</div>
+                            <ul style="margin: 0;">
+                                <li style="font-size: 22px;">自动加载场景相关的视频点位</li>
+                                <li style="font-size: 22px;">组织多屏监控布局</li>
+                                <li style="font-size: 22px;">获取各点位最新定时截图</li>
+                                <li style="font-size: 22px;">执行人员、区域、画面质量检查</li>
+                            </ul>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-title">🎯 工作方式</div>
+                            <ul style="margin: 0;">
+                                <li style="font-size: 22px;">通过聊天启动巡查任务</li>
+                                <li style="font-size: 22px;">按计划自动运行</li>
+                                <li style="font-size: 22px;">实时显示巡查进度</li>
+                                <li style="font-size: 22px;">汇总正常、异常和无法判断的点位</li>
+                            </ul>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-title">🔍 检查内容</div>
+                            <ul style="margin: 0;">
+                                <li style="font-size: 22px;">图片时效性</li>
+                                <li style="font-size: 22px;">画面质量</li>
+                                <li style="font-size: 22px;">人员存在情况</li>
+                                <li style="font-size: 22px;">关注区域人员情况</li>
+                                <li style="font-size: 22px;">人员密集程度</li>
+                            </ul>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-title">⚡ 能力边界</div>
+                            <ul style="margin: 0;">
+                                <li style="font-size: 22px;">基于定时截图，非实时分析</li>
+                                <li style="font-size: 22px;">单张图片无法确认动态行为</li>
+                                <li style="font-size: 22px;">模糊图片不给出确定结论</li>
+                                <li style="font-size: 22px;">分析失败的点位不计入正常</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 幻灯片6: 应用场景 -->
+            <div class="slide">
+                <div class="bg-grid"></div>
+                <div class="slide-content">
+                    <div class="chip">应用场景</div>
+                    <h2>三大核心场景</h2>
+                    <div style="margin-top: 60px; display: flex; flex-direction: column; gap: 32px;">
+                        <div class="card">
+                            <div style="display: flex; align-items: center; gap: 32px;">
+                                <div style="width: 100px; height: 100px; background: linear-gradient(135deg, #4ecdc4, #44a08d); border-radius: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                    <span style="font-size: 48px;">🌊</span>
+                                </div>
+                                <div style="flex: 1;">
+                                    <div class="card-title">观潮值守</div>
+                                    <div class="card-text">
+                                        <strong>关键检查：</strong>人员是否进入沿江关注区域、人员密集程度、画面质量<br>
+                                        <strong>风险规则：</strong>人员进入关注区域为高风险；人员明显密集为中风险
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div style="display: flex; align-items: center; gap: 32px;">
+                                <div style="width: 100px; height: 100px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                    <span style="font-size: 48px;">🌀</span>
+                                </div>
+                                <div style="flex: 1;">
+                                    <div class="card-title">台风值守</div>
+                                    <div class="card-text">
+                                        <strong>关键检查：</strong>人员情况、画面质量、截图时效、重点设施状态<br>
+                                        <strong>试点检查：</strong>明显积水、障碍物、闸门等重点设施可见状态
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div style="display: flex; align-items: center; gap: 32px;">
+                                <div style="width: 100px; height: 100px; background: linear-gradient(135deg, #fa709a, #fee140); border-radius: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                    <span style="font-size: 48px;">🚰</span>
+                                </div>
+                                <div style="flex: 1;">
+                                    <div class="card-title">防汛巡查</div>
+                                    <div class="card-text">
+                                        <strong>关键检查：</strong>水位变化、闸门状态、排涝设施运行情况<br>
+                                        <strong>扩展能力：</strong>可配置更多场景，适应不同业务需求
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 幻灯片7: 观潮值守场景对话（优化版） -->
+            <div class="slide">
+                <div class="bg-grid"></div>
+                <div class="slide-content" style="padding: 0; display: flex; height: 100%;">
+                    <!-- 左侧智能体菜单（调窄+树形结构） -->
+                    <div style="width: 240px; background: var(--bg-card); border-right: 1px solid var(--border-color); display: flex; flex-direction: column;">
+                        <!-- 顶部标题 -->
+                        <div style="padding: 24px 20px; border-bottom: 1px solid var(--border-color);">
+                            <div style="font-size: 11px; color: var(--text-dimmer); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px;">智能体中心</div>
+                            <h3 style="font-size: 20px; margin: 0; color: var(--text-light);">工作台</h3>
+                        </div>
+
+                        <!-- 智能体列表 -->
+                        <div style="flex: 1; padding: 16px 0; overflow-y: auto;">
+                            <!-- 场景智能巡查员 - 展开状态 -->
+                            <div>
+                                <div style="padding: 12px 20px; background: var(--bg-lighter); cursor: pointer;">
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <div style="width: 36px; height: 36px; background: linear-gradient(135deg, var(--primary), var(--secondary)); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                            <span style="font-size: 16px; font-weight: 700; color: white;">巡查</span>
+                                        </div>
+                                        <div style="flex: 1;">
+                                            <div style="font-size: 16px; font-weight: 600; color: var(--text-light);">场景智能巡查员</div>
+                                        </div>
+                                        <div style="font-size: 12px; color: var(--text-dim);">▼</div>
+                                    </div>
+                                </div>
+
+                                <!-- 子场景：观潮值守 - 选中状态 -->
+                                <div style="padding: 10px 20px 10px 56px; background: rgba(0, 102, 255, 0.15); border-left: 3px solid var(--primary);">
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <div style="font-size: 18px;">🌊</div>
+                                        <div style="font-size: 15px; font-weight: 600; color: var(--primary);">观潮值守</div>
+                                    </div>
+                                    <div style="font-size: 12px; color: var(--text-dim); margin-top: 4px;">15个监控点位</div>
+                                </div>
+
+                                <!-- 其他子场景 -->
+                                <div style="padding: 10px 20px 10px 56px; opacity: 0.6; cursor: pointer;">
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <div style="font-size: 18px;">🌀</div>
+                                        <div style="font-size: 15px; color: var(--text-light);">台风值守</div>
+                                    </div>
+                                </div>
+
+                                <div style="padding: 10px 20px 10px 56px; opacity: 0.6; cursor: pointer;">
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <div style="font-size: 18px;">🚰</div>
+                                        <div style="font-size: 15px; color: var(--text-light);">防汛巡查</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 预警研判助手 - 未选中 -->
+                            <div style="padding: 12px 20px; opacity: 0.6; cursor: pointer; margin-top: 8px;">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <div style="width: 36px; height: 36px; background: linear-gradient(135deg, var(--secondary), var(--primary)); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                        <span style="font-size: 16px; font-weight: 700; color: white;">预警</span>
+                                    </div>
+                                    <div style="flex: 1;">
+                                        <div style="font-size: 16px; font-weight: 600; color: var(--text-light);">预警研判助手</div>
+                                    </div>
+                                    <div style="font-size: 12px; color: var(--text-dim);">▶</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 右侧对话内容区 -->
+                    <div style="flex: 1; display: flex; flex-direction: column; background: var(--bg-dark);">
+                        <!-- 标题栏 -->
+                        <div style="padding: 24px 40px; border-bottom: 1px solid var(--border-color); background: var(--bg-card);">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="font-size: 32px;">🌊</div>
+                                <div>
+                                    <div style="font-size: 12px; color: var(--text-dimmer); margin-bottom: 4px;">场景智能巡查员</div>
+                                    <h2 style="font-size: 32px; margin: 0;">观潮值守 - 日常巡查</h2>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 聊天对话区 -->
+                        <div style="flex: 1; padding: 32px 40px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px;">
+                            <!-- 员工提问1 - 右侧 -->
+                            <div style="display: flex; justify-content: flex-end;">
+                                <div style="max-width: 70%; background: var(--primary); padding: 16px 20px; border-radius: 16px 16px 4px 16px;">
+                                    <div style="font-size: 18px; color: white; line-height: 1.6;">
+                                        调出观潮场景，帮我巡查一遍
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- AI回答1 - 左侧 -->
+                            <div style="display: flex; justify-content: flex-start;">
+                                <div style="max-width: 75%; background: var(--bg-card); padding: 18px 22px; border-radius: 16px 16px 16px 4px; border: 1px solid var(--border-color);">
+                                    <div style="font-size: 17px; color: var(--text-dim); line-height: 1.8;">
+                                        ✅ 已识别"观潮"场景<br>
+                                        ✅ 已加载预先配置的观潮点位<br>
+                                        ✅ 自动组织多屏实时视频<br>
+                                        ✅ 获取各点位最近一张有效定时截图<br>
+                                        ✅ 执行人员、关注区域和画面质量检查任务
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 员工提问2 - 右侧 -->
+                            <div style="display: flex; justify-content: flex-end;">
+                                <div style="max-width: 70%; background: var(--primary); padding: 16px 20px; border-radius: 16px 16px 4px 16px;">
+                                    <div style="font-size: 18px; color: white; line-height: 1.6;">
+                                        哪些点位需要重点看？
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- AI回答2 - 巡查结果 - 左侧 -->
+                            <div style="display: flex; justify-content: flex-start;">
+                                <div style="max-width: 80%; background: var(--bg-card); padding: 22px 24px; border-radius: 16px 16px 16px 4px; border: 1px solid var(--border-color);">
+                                    <div style="font-size: 20px; font-weight: 600; color: var(--secondary); margin-bottom: 16px;">本轮观潮巡查结果</div>
+
+                                    <div style="font-size: 16px; color: var(--text-dim); line-height: 1.7; margin-bottom: 16px;">
+                                        <strong>AI分析依据：</strong>各点位最近一张定时截图<br>
+                                        <strong>图片时间：</strong>10:43—10:48　<strong>分析完成：</strong>10:50
+                                    </div>
+
+                                    <div style="background: rgba(0, 255, 204, 0.1); padding: 16px; border-radius: 10px; margin-bottom: 14px; border-left: 3px solid #4ecdc4;">
+                                        <div style="font-size: 18px; font-weight: 600; color: #4ecdc4; margin-bottom: 10px;">共检查15个点位</div>
+                                        <div style="font-size: 16px; line-height: 1.8; color: var(--text-dim);">
+                                            ✅ 12个未发现明显异常<br>
+                                            ⚠️ 2个需要关注<br>
+                                            🔴 1个高风险异常线索
+                                        </div>
+                                    </div>
+
+                                    <div style="background: rgba(255, 107, 107, 0.12); padding: 14px; border-radius: 10px; margin-bottom: 10px; border-left: 3px solid #ff6b6b;">
+                                        <div style="font-size: 17px; color: var(--text-light);">
+                                            <strong style="color: #ff6b6b;">江堤2号</strong>（10:48）
+                                        </div>
+                                        <div style="font-size: 15px; color: var(--text-dim); margin-top: 6px;">
+                                            存在多名人员，部分人员疑似位于关注区域；按观潮场景规则列为<strong style="color: #ff6b6b;">高风险</strong>
+                                        </div>
+                                    </div>
+
+                                    <div style="background: rgba(255, 230, 109, 0.12); padding: 14px; border-radius: 10px; border-left: 3px solid #ffe66d;">
+                                        <div style="font-size: 17px; color: var(--text-light);">
+                                            <strong style="color: #ffe66d;">观景台B</strong>（10:47）
+                                        </div>
+                                        <div style="font-size: 15px; color: var(--text-dim); margin-top: 6px;">
+                                            当前画面人员明显密集，具体人数仅为近似判断
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 幻灯片8: 台风值守场景对话（优化版） -->
+            <div class="slide">
+                <div class="bg-grid"></div>
+                <div class="slide-content" style="padding: 0; display: flex; height: 100%;">
+                    <!-- 左侧智能体菜单 -->
+                    <div style="width: 240px; background: var(--bg-card); border-right: 1px solid var(--border-color); display: flex; flex-direction: column;">
+                        <div style="padding: 24px 20px; border-bottom: 1px solid var(--border-color);">
+                            <div style="font-size: 11px; color: var(--text-dimmer); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px;">智能体中心</div>
+                            <h3 style="font-size: 20px; margin: 0; color: var(--text-light);">工作台</h3>
+                        </div>
+
+                        <div style="flex: 1; padding: 16px 0; overflow-y: auto;">
+                            <!-- 场景智能巡查员 - 展开 -->
+                            <div>
+                                <div style="padding: 12px 20px; background: var(--bg-lighter);">
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <div style="width: 36px; height: 36px; background: linear-gradient(135deg, var(--primary), var(--secondary)); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                            <span style="font-size: 16px; font-weight: 700; color: white;">巡查</span>
+                                        </div>
+                                        <div style="flex: 1; font-size: 16px; font-weight: 600; color: var(--text-light);">场景智能巡查员</div>
+                                        <div style="font-size: 12px; color: var(--text-dim);">▼</div>
+                                    </div>
+                                </div>
+
+                                <div style="padding: 10px 20px 10px 56px; opacity: 0.6;">
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <div style="font-size: 18px;">🌊</div>
+                                        <div style="font-size: 15px; color: var(--text-light);">观潮值守</div>
+                                    </div>
+                                </div>
+
+                                <!-- 台风值守 - 选中 -->
+                                <div style="padding: 10px 20px 10px 56px; background: rgba(0, 102, 255, 0.15); border-left: 3px solid var(--primary);">
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <div style="font-size: 18px;">🌀</div>
+                                        <div style="font-size: 15px; font-weight: 600; color: var(--primary);">台风值守</div>
+                                    </div>
+                                    <div style="font-size: 12px; color: var(--text-dim); margin-top: 4px;">22个监控点位</div>
+                                </div>
+
+                                <div style="padding: 10px 20px 10px 56px; opacity: 0.6;">
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <div style="font-size: 18px;">🚰</div>
+                                        <div style="font-size: 15px; color: var(--text-light);">防汛巡查</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 预警研判助手 -->
+                            <div style="padding: 12px 20px; opacity: 0.6; margin-top: 8px;">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <div style="width: 36px; height: 36px; background: linear-gradient(135deg, var(--secondary), var(--primary)); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                        <span style="font-size: 16px; font-weight: 700; color: white;">预警</span>
+                                    </div>
+                                    <div style="flex: 1; font-size: 16px; font-weight: 600; color: var(--text-light);">预警研判助手</div>
+                                    <div style="font-size: 12px; color: var(--text-dim);">▶</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 右侧对话区 -->
+                    <div style="flex: 1; display: flex; flex-direction: column; background: var(--bg-dark);">
+                        <div style="padding: 24px 40px; border-bottom: 1px solid var(--border-color); background: var(--bg-card);">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="font-size: 32px;">🌀</div>
+                                <div>
+                                    <div style="font-size: 12px; color: var(--text-dimmer); margin-bottom: 4px;">场景智能巡查员</div>
+                                    <h2 style="font-size: 32px; margin: 0;">台风值守 - 专项启动</h2>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="flex: 1; padding: 32px 40px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px;">
+                            <!-- 提问1 -->
+                            <div style="display: flex; justify-content: flex-end;">
+                                <div style="max-width: 70%; background: var(--primary); padding: 16px 20px; border-radius: 16px 16px 4px 16px;">
+                                    <div style="font-size: 18px; color: white; line-height: 1.6;">启动台风值守，帮我准备相关监控</div>
+                                </div>
+                            </div>
+
+                            <!-- 回答1 -->
+                            <div style="display: flex; justify-content: flex-start;">
+                                <div style="max-width: 75%; background: var(--bg-card); padding: 18px 22px; border-radius: 16px 16px 16px 4px; border: 1px solid var(--border-color);">
+                                    <div style="font-size: 17px; color: var(--text-dim); line-height: 1.8;">
+                                        已启动【台风值守】场景<br><br>
+                                        ✅ 已加载22个台风重点视频点位<br>
+                                        ✅ 按优先级组织为多屏监控<br>
+                                        ✅ 已启动人员情况检查<br>
+                                        ✅ 已启动画面质量检查<br>
+                                        ✅ 已启动重点设施状态试点检查
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 提问2 -->
+                            <div style="display: flex; justify-content: flex-end;">
+                                <div style="max-width: 70%; background: var(--primary); padding: 16px 20px; border-radius: 16px 16px 4px 16px;">
+                                    <div style="font-size: 18px; color: white; line-height: 1.6;">现在各点位情况怎么样？</div>
+                                </div>
+                            </div>
+
+                            <!-- 回答2 - 巡查结果 -->
+                            <div style="display: flex; justify-content: flex-start;">
+                                <div style="max-width: 80%; background: var(--bg-card); padding: 22px 24px; border-radius: 16px 16px 16px 4px; border: 1px solid var(--border-color);">
+                                    <div style="font-size: 20px; font-weight: 600; color: var(--secondary); margin-bottom: 16px;">最近一轮巡查结果</div>
+
+                                    <div style="font-size: 16px; color: var(--text-dim); line-height: 1.7; margin-bottom: 16px;">
+                                        <strong>AI分析依据：</strong>各点位最近一张定时截图<br>
+                                        <strong>图片时间：</strong>15:25—15:34　<strong>分析完成：</strong>15:35
+                                    </div>
+
+                                    <div style="background: rgba(0, 255, 204, 0.1); padding: 16px; border-radius: 10px; margin-bottom: 14px; border-left: 3px solid #667eea;">
+                                        <div style="font-size: 16px; line-height: 1.8; color: var(--text-dim);">
+                                            ✅ 未发现明显异常：17个点位<br>
+                                            ⚠️ 发现异常线索：3个点位<br>
+                                            🔴 高风险异常线索：1个点位<br>
+                                            ❓ 暂时无法判断：1个点位
+                                        </div>
+                                    </div>
+
+                                    <div style="background: rgba(255, 107, 107, 0.12); padding: 14px; border-radius: 10px; margin-bottom: 10px; border-left: 3px solid #ff6b6b;">
+                                        <div style="font-size: 17px; color: var(--text-light);"><strong style="color: #ff6b6b;">码头B区</strong>（15:32）</div>
+                                        <div style="font-size: 15px; color: var(--text-dim); margin-top: 6px;">画面中存在疑似人员，单张截图无法确认是否停留</div>
+                                    </div>
+
+                                    <div style="background: rgba(255, 230, 109, 0.12); padding: 14px; border-radius: 10px; margin-bottom: 10px; border-left: 3px solid #ffe66d;">
+                                        <div style="font-size: 17px; color: var(--text-light);"><strong style="color: #ffe66d;">海堤A段</strong>（最近15:18）</div>
+                                        <div style="font-size: 15px; color: var(--text-dim); margin-top: 6px;">截图超过规定时间未更新，不能直接判断摄像头离线</div>
+                                    </div>
+
+                                    <div style="background: rgba(139, 146, 178, 0.15); padding: 14px; border-radius: 10px; border-left: 3px solid var(--text-dimmer);">
+                                        <div style="font-size: 17px; color: var(--text-light);"><strong>排涝口1号</strong>（15:31）</div>
+                                        <div style="font-size: 15px; color: var(--text-dim); margin-top: 6px;">试点分析疑似积水，受雨水和画面模糊影响，证据不足</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 幻灯片9: 定时自动巡查（优化版 - 防汛场景） -->
+            <div class="slide">
+                <div class="bg-grid"></div>
+                <div class="slide-content" style="padding: 0; display: flex; height: 100%;">
+                    <!-- 左侧菜单 -->
+                    <div style="width: 240px; background: var(--bg-card); border-right: 1px solid var(--border-color); display: flex; flex-direction: column;">
+                        <div style="padding: 24px 20px; border-bottom: 1px solid var(--border-color);">
+                            <div style="font-size: 11px; color: var(--text-dimmer); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px;">智能体中心</div>
+                            <h3 style="font-size: 20px; margin: 0; color: var(--text-light);">工作台</h3>
+                        </div>
+                        <div style="flex: 1; padding: 16px 0;">
+                            <div>
+                                <div style="padding: 12px 20px; background: var(--bg-lighter);">
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <div style="width: 36px; height: 36px; background: linear-gradient(135deg, var(--primary), var(--secondary)); border-radius: 8px; display: flex; align-items: center; justify-content: center;"><span style="font-size: 16px; font-weight: 700; color: white;">巡查</span></div>
+                                        <div style="flex: 1; font-size: 16px; font-weight: 600; color: var(--text-light);">场景智能巡查员</div>
+                                        <div style="font-size: 12px; color: var(--text-dim);">▼</div>
+                                    </div>
+                                </div>
+                                <div style="padding: 10px 20px 10px 56px; opacity: 0.6;"><div style="display: flex; align-items: center; gap: 8px;"><div style="font-size: 18px;">🌊</div><div style="font-size: 15px; color: var(--text-light);">观潮值守</div></div></div>
+                                <div style="padding: 10px 20px 10px 56px; opacity: 0.6;"><div style="display: flex; align-items: center; gap: 8px;"><div style="font-size: 18px;">🌀</div><div style="font-size: 15px; color: var(--text-light);">台风值守</div></div></div>
+                                <!-- 防汛巡查 - 选中 -->
+                                <div style="padding: 10px 20px 10px 56px; background: rgba(0, 102, 255, 0.15); border-left: 3px solid var(--primary);">
+                                    <div style="display: flex; align-items: center; gap: 8px;"><div style="font-size: 18px;">🚰</div><div style="font-size: 15px; font-weight: 600; color: var(--primary);">防汛巡查</div></div>
+                                    <div style="font-size: 12px; color: var(--text-dim); margin-top: 4px;">定时巡查</div>
+                                </div>
+                            </div>
+                            <div style="padding: 12px 20px; opacity: 0.6; margin-top: 8px;">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <div style="width: 36px; height: 36px; background: linear-gradient(135deg, var(--secondary), var(--primary)); border-radius: 8px; display: flex; align-items: center; justify-content: center;"><span style="font-size: 16px; font-weight: 700; color: white;">预警</span></div>
+                                    <div style="flex: 1; font-size: 16px; font-weight: 600; color: var(--text-light);">预警研判助手</div>
+                                    <div style="font-size: 12px; color: var(--text-dim);">▶</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 右侧对话区 -->
+                    <div style="flex: 1; display: flex; flex-direction: column; background: var(--bg-dark);">
+                        <div style="padding: 24px 40px; border-bottom: 1px solid var(--border-color); background: var(--bg-card);">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="font-size: 32px;">🚰</div>
+                                <div>
+                                    <div style="font-size: 12px; color: var(--text-dimmer); margin-bottom: 4px;">场景智能巡查员·定时任务</div>
+                                    <h2 style="font-size: 32px; margin: 0;">防汛巡查 - 定时自动巡查</h2>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="flex: 1; padding: 32px 40px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px;">
+                            <!-- AI主动推送 -->
+                            <div style="display: flex; justify-content: flex-start;">
+                                <div style="max-width: 80%; background: var(--bg-card); padding: 22px 24px; border-radius: 16px 16px 16px 4px; border: 2px solid var(--primary);">
+                                    <div style="font-size: 24px; font-weight: 700; color: var(--secondary); margin-bottom: 16px;">10:30 防汛巡查已完成</div>
+                                    <div style="font-size: 16px; color: var(--text-dim); line-height: 1.7;">
+                                        <strong>图片时间：</strong>10:23—10:29<br><br>
+                                        <strong>本轮检查18个点位：</strong><br>
+                                        ✅ 15个未发现明显异常<br>
+                                        ⚠️ 2个发现异常线索<br>
+                                        ❓ 1个截图未及时更新
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 员工提问 -->
+                            <div style="display: flex; justify-content: flex-end;">
+                                <div style="max-width: 70%; background: var(--primary); padding: 16px 20px; border-radius: 16px 16px 4px 16px;">
+                                    <div style="font-size: 18px; color: white;">哪些点位出现异常？</div>
+                                </div>
+                            </div>
+
+                            <!-- AI回答 -->
+                            <div style="display: flex; justify-content: flex-start;">
+                                <div style="max-width: 75%; background: var(--bg-card); padding: 18px 22px; border-radius: 16px 16px 16px 4px; border: 1px solid var(--border-color);">
+                                    <div style="font-size: 17px; color: var(--text-dim); line-height: 1.8;">
+                                        排涝口1号和水闸A段需要重点关注
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 说明卡片 -->
+                            <div style="margin-top: 20px; padding: 20px; background: rgba(0, 212, 255, 0.08); border-radius: 12px; border-left: 3px solid var(--secondary);">
+                                <div style="font-size: 18px; font-weight: 600; color: var(--secondary); margin-bottom: 12px;">💡 定时巡查能力</div>
+                                <div style="font-size: 15px; color: var(--text-dim); line-height: 1.7;">
+                                    场景智能巡查员不需要每次都由员工主动询问。管理员可以配置巡查场景、时间和频率、检查点位列表、异常通知对象。<br><br>
+                                    <strong>示例配置：</strong>防汛巡查场景，汛期每2小时一次，关注水位、闸门状态、排涝设施运行情况<br><br>
+                                    员工收到主动消息后，可以继续追问哪些点位出现异常、为什么某点位属于高风险，并直接打开相关实时视频。
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 幻灯片10: 巡查员 - 能力范围（优化版） -->
+            <div class="slide">
+                <div class="bg-grid"></div>
+                <div class="slide-content" style="padding: 0; display: flex; height: 100%;">
+                    <!-- 左侧菜单 -->
+                    <div style="width: 240px; background: var(--bg-card); border-right: 1px solid var(--border-color); display: flex; flex-direction: column;">
+                        <div style="padding: 24px 20px; border-bottom: 1px solid var(--border-color);">
+                            <div style="font-size: 11px; color: var(--text-dimmer); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px;">智能体中心</div>
+                            <h3 style="font-size: 20px; margin: 0; color: var(--text-light);">工作台</h3>
+                        </div>
+                        <div style="flex: 1; padding: 16px 0;">
+                            <div>
+                                <div style="padding: 12px 20px; background: var(--bg-lighter);">
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <div style="width: 36px; height: 36px; background: linear-gradient(135deg, var(--primary), var(--secondary)); border-radius: 8px; display: flex; align-items: center; justify-content: center;"><span style="font-size: 16px; font-weight: 700; color: white;">巡查</span></div>
+                                        <div style="flex: 1; font-size: 16px; font-weight: 600; color: var(--text-light);">场景智能巡查员</div>
+                                        <div style="font-size: 12px; color: var(--text-dim);">▼</div>
+                                    </div>
+                                </div>
+                                <div style="padding: 10px 20px 10px 56px; opacity: 0.6;"><div style="display: flex; align-items: center; gap: 8px;"><div style="font-size: 18px;">🌊</div><div style="font-size: 15px; color: var(--text-light);">观潮值守</div></div></div>
+                                <div style="padding: 10px 20px 10px 56px; opacity: 0.6;"><div style="display: flex; align-items: center; gap: 8px;"><div style="font-size: 18px;">🌀</div><div style="font-size: 15px; color: var(--text-light);">台风值守</div></div></div>
+                                <!-- 防汛巡查 - 选中 -->
+                                <div style="padding: 10px 20px 10px 56px; background: rgba(0, 102, 255, 0.15); border-left: 3px solid var(--primary);">
+                                    <div style="display: flex; align-items: center; gap: 8px;"><div style="font-size: 18px;">🚰</div><div style="font-size: 15px; font-weight: 600; color: var(--primary);">防汛巡查</div></div>
+                                    <div style="font-size: 12px; color: var(--text-dim); margin-top: 4px;">能力范围</div>
+                                </div>
+                            </div>
+                            <div style="padding: 12px 20px; opacity: 0.6; margin-top: 8px;">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <div style="width: 36px; height: 36px; background: linear-gradient(135deg, var(--secondary), var(--primary)); border-radius: 8px; display: flex; align-items: center; justify-content: center;"><span style="font-size: 16px; font-weight: 700; color: white;">预警</span></div>
+                                    <div style="flex: 1; font-size: 16px; font-weight: 600; color: var(--text-light);">预警研判助手</div>
+                                    <div style="font-size: 12px; color: var(--text-dim);">▶</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 右侧对话区 -->
+                    <div style="flex: 1; display: flex; flex-direction: column; background: var(--bg-dark);">
+                        <div style="padding: 24px 40px; border-bottom: 1px solid var(--border-color); background: var(--bg-card);">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="font-size: 32px;">🚰</div>
+                                <div>
+                                    <div style="font-size: 12px; color: var(--text-dimmer); margin-bottom: 4px;">场景智能巡查员</div>
+                                    <h2 style="font-size: 32px; margin: 0;">防汛巡查 - 能力范围</h2>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="flex: 1; padding: 32px 40px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px;">
+                            <!-- 对话1 -->
+                            <div style="display: flex; justify-content: flex-end;">
+                                <div style="max-width: 60%; background: var(--primary); padding: 14px 18px; border-radius: 16px 16px 4px 16px;"><div style="font-size: 17px; color: white;">帮我写一首诗</div></div>
+                            </div>
+                            <div style="display: flex; justify-content: flex-start;">
+                                <div style="max-width: 75%; background: var(--bg-card); padding: 16px 20px; border-radius: 16px 16px 16px 4px; border: 1px solid var(--border-color);">
+                                    <div style="font-size: 16px; color: #c8d0e0; line-height: 1.7;">我是视频巡查智能体，主要负责视频点位巡查、异常查询和综合研判，暂不处理该类问题。<br><br>你可以让我：检查某个场景的视频点位、查询最近的异常情况、查看巡查进度和结果</div>
+                                </div>
+                            </div>
+
+                            <!-- 对话2 -->
+                            <div style="display: flex; justify-content: flex-end;">
+                                <div style="max-width: 60%; background: var(--primary); padding: 14px 18px; border-radius: 16px 16px 4px 16px;"><div style="font-size: 17px; color: white;">台风什么时候登陆杭州？</div></div>
+                            </div>
+                            <div style="display: flex; justify-content: flex-start;">
+                                <div style="max-width: 75%; background: var(--bg-card); padding: 16px 20px; border-radius: 16px 16px 16px 4px; border: 1px solid var(--border-color);">
+                                    <div style="font-size: 16px; color: #c8d0e0; line-height: 1.7;">我目前只能根据平台视频和异常数据判断现场情况，暂时没有接入实时气象信息，无法确认台风登陆时间。<br><br>我可以帮你检查台风值守点位的最新画面。</div>
+                                </div>
+                            </div>
+
+                            <!-- 对话3 -->
+                            <div style="display: flex; justify-content: flex-end;">
+                                <div style="max-width: 60%; background: var(--primary); padding: 14px 18px; border-radius: 16px 16px 4px 16px;"><div style="font-size: 17px; color: white;">帮我分析一只股票</div></div>
+                            </div>
+                            <div style="display: flex; justify-content: flex-start;">
+                                <div style="max-width: 75%; background: var(--bg-card); padding: 16px 20px; border-radius: 16px 16px 16px 4px; border: 1px solid var(--border-color);">
+                                    <div style="font-size: 16px; color: #c8d0e0; line-height: 1.7;">我是视频巡查智能体，不具备股票分析能力。<br><br>我的专长是：视频点位巡查、异常情况识别、场景状态监控</div>
+                                </div>
+                            </div>
+
+                            <!-- 说明卡片 -->
+                            <div style="margin-top: 24px; padding: 20px; background: rgba(255, 230, 109, 0.08); border-radius: 12px; border-left: 3px solid #ffe66d;">
+                                <div style="font-size: 18px; font-weight: 600; color: #ffe66d; margin-bottom: 12px;">💡 设计原则</div>
+                                <div style="font-size: 15px; color: #c8d0e0; line-height: 1.7;">
+                                    智能体的拒绝回答不是系统报错，而是礼貌地说明能力范围，并提示用户能够使用的功能，保持专业、友好的交互体验。
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 幻灯片11: 预警研判助手详解 -->
+            <div class="slide">
+                <div class="bg-grid"></div>
+                <div class="slide-content">
+                    <div class="chip">智能体02</div>
+                    <h2>预警研判助手</h2>
+                    <p style="font-size: 32px; color: var(--text-dim); margin-bottom: 48px;">
+                        接收异常线索，结合图片证据、场景规则、历史记录，完成解释、分级、合并、查询和汇总
+                    </p>
+
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 32px;">
+                        <div class="card">
+                            <div class="card-title">🎯 核心能力</div>
+                            <ul style="margin: 0;">
+                                <li style="font-size: 22px;">解释异常原因和风险依据</li>
+                                <li style="font-size: 22px;">按场景规则进行风险分级</li>
+                                <li style="font-size: 22px;">合并同类事件减少干扰</li>
+                                <li style="font-size: 22px;">生成推送摘要和交接报告</li>
+                            </ul>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-title">📊 研判信息来源</div>
+                            <ul style="margin: 0;">
+                                <li style="font-size: 22px;">原始异常图片和拍摄时间</li>
+                                <li style="font-size: 22px;">点位、场景及关注区域配置</li>
+                                <li style="font-size: 22px;">前后定时截图（可获取时）</li>
+                                <li style="font-size: 22px;">近期异常记录和人工反馈</li>
+                            </ul>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-title">⚖️ 风险等级产生方式</div>
+                            <div class="card-text" style="font-size: 22px;">
+                                <strong style="color: var(--secondary);">多模态大模型</strong>：观察是否有人、是否疑似进入关注区域、图片是否清晰<br><br>
+                                <strong style="color: var(--secondary);">场景规则</strong>：确定风险等级（高风险/中风险/需要关注/无法判断）
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-title">✨ 核心价值</div>
+                            <ul style="margin: 0;">
+                                <li style="font-size: 22px;">减少信息过载</li>
+                                <li style="font-size: 22px;">提供决策依据</li>
+                                <li style="font-size: 22px;">加速交接效率</li>
+                                <li style="font-size: 22px;">辅助判断而非替代决策</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 幻灯片12: 预警研判助手场景1 - 单条异常研判（优化版） -->
+            <div class="slide">
+                <div class="bg-grid"></div>
+                <div class="slide-content" style="padding: 0; display: flex; height: 100%;">
+                    <!-- 左侧智能体菜单 -->
+                    <div style="width: 240px; background: var(--bg-card); border-right: 1px solid var(--border-color); display: flex; flex-direction: column;">
+                        <div style="padding: 24px 20px; border-bottom: 1px solid var(--border-color);">
+                            <div style="font-size: 11px; color: var(--text-dimmer); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px;">智能体中心</div>
+                            <h3 style="font-size: 20px; margin: 0; color: var(--text-light);">工作台</h3>
+                        </div>
+                        <div style="flex: 1; padding: 16px 0; overflow-y: auto;">
+                            <!-- 场景智能巡查员 - 未选中 -->
+                            <div style="padding: 12px 20px; opacity: 0.6; cursor: pointer;">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <div style="width: 36px; height: 36px; background: linear-gradient(135deg, var(--primary), var(--secondary)); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                        <span style="font-size: 16px; font-weight: 700; color: white;">巡查</span>
+                                    </div>
+                                    <div style="flex: 1; font-size: 16px; font-weight: 600; color: var(--text-light);">场景智能巡查员</div>
+                                    <div style="font-size: 12px; color: var(--text-dim);">▶</div>
+                                </div>
+                            </div>
+
+                            <!-- 预警研判助手 - 展开状态 -->
+                            <div style="margin-top: 8px;">
+                                <div style="padding: 12px 20px; background: var(--bg-lighter); cursor: pointer;">
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <div style="width: 36px; height: 36px; background: linear-gradient(135deg, var(--secondary), var(--primary)); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                            <span style="font-size: 16px; font-weight: 700; color: white;">预警</span>
+                                        </div>
+                                        <div style="flex: 1; font-size: 16px; font-weight: 600; color: var(--text-light);">预警研判助手</div>
+                                        <div style="font-size: 12px; color: var(--text-dim);">▼</div>
+                                    </div>
+                                </div>
+
+                                <!-- 子场景1 - 选中状态 -->
+                                <div style="padding: 10px 20px 10px 56px; background: rgba(0, 102, 255, 0.15); border-left: 3px solid var(--primary);">
+                                    <div style="font-size: 15px; font-weight: 600; color: var(--primary);">单条预警复核</div>
+                                    <div style="font-size: 12px; color: var(--text-dim); margin-top: 4px;">解释风险原因</div>
+                                </div>
+
+                                <!-- 其他子场景 -->
+                                <div style="padding: 10px 20px 10px 56px; opacity: 0.6; cursor: pointer;">
+                                    <div style="font-size: 15px; color: var(--text-light);">批量预警汇总</div>
+                                </div>
+
+                                <div style="padding: 10px 20px 10px 56px; opacity: 0.6; cursor: pointer;">
+                                    <div style="font-size: 15px; color: var(--text-light);">值班交接汇总</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 右侧对话区 -->
+                    <div style="flex: 1; display: flex; flex-direction: column; background: var(--bg-dark);">
+                        <div style="padding: 24px 40px; border-bottom: 1px solid var(--border-color); background: var(--bg-card);">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="font-size: 32px;">🔴</div>
+                                <div>
+                                    <div style="font-size: 12px; color: var(--text-dimmer); margin-bottom: 4px;">预警研判助手</div>
+                                    <h2 style="font-size: 32px; margin: 0;">单条预警复核</h2>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="flex: 1; padding: 32px 40px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px;">
+                            <!-- 对话1 -->
+                            <div style="display: flex; justify-content: flex-end;">
+                                <div style="max-width: 70%; background: var(--primary); padding: 16px 20px; border-radius: 16px 16px 4px 16px;">
+                                    <div style="font-size: 18px; color: white;">为什么列为高优先级？</div>
+                                </div>
+                            </div>
+                            <div style="display: flex; justify-content: flex-start;">
+                                <div style="max-width: 75%; background: var(--bg-card); padding: 18px 22px; border-radius: 16px 16px 16px 4px; border: 1px solid var(--border-color);">
+                                    <div style="font-size: 17px; color: #c8d0e0; line-height: 1.8;">按观潮场景规则，人员进入关注区域为高风险</div>
+                                </div>
+                            </div>
+
+                            <!-- 对话2 -->
+                            <div style="display: flex; justify-content: flex-end;">
+                                <div style="max-width: 70%; background: var(--primary); padding: 16px 20px; border-radius: 16px 16px 4px 16px;">
+                                    <div style="font-size: 18px; color: white;">同一点位今天出现过几次类似情况？</div>
+                                </div>
+                            </div>
+                            <div style="display: flex; justify-content: flex-start;">
+                                <div style="max-width: 80%; background: var(--bg-card); padding: 22px 24px; border-radius: 16px 16px 16px 4px; border: 1px solid var(--border-color);">
+                                    <div style="font-size: 20px; font-weight: 600; color: #ff6b6b; margin-bottom: 16px;">九溪观潮点 - 疑似人员进入关注区域</div>
+                                    <div style="font-size: 16px; color: #c8d0e0; line-height: 1.7;">
+                                        <strong>图片时间：</strong>10:23　<strong>场景：</strong>观潮值守<br><br>
+                                        今天已出现2次，分别在08:45和10:23<br><br>
+                                        <div style="background: rgba(255, 107, 107, 0.15); padding: 16px; border-radius: 10px; margin: 14px 0; border-left: 3px solid #ff6b6b;">
+                                            <strong style="color: #ff6b6b;">风险等级：较高</strong><br>
+                                            图片中存在多名人员，部分人员疑似位于沿江关注区域，图片较清晰
+                                        </div>
+                                        <div style="background: rgba(0, 212, 255, 0.08); padding: 14px; border-radius: 8px;">
+                                            <strong>💡 建议：</strong>打开直播进一步确认
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 幻灯片13: 预警研判助手场景2 - 批量整理（优化版） -->
+            <div class="slide">
+                <div class="bg-grid"></div>
+                <div class="slide-content" style="padding: 0; display: flex; height: 100%;">
+                    <!-- 左侧智能体菜单 -->
+                    <div style="width: 240px; background: var(--bg-card); border-right: 1px solid var(--border-color); display: flex; flex-direction: column;">
+                        <div style="padding: 24px 20px; border-bottom: 1px solid var(--border-color);">
+                            <div style="font-size: 11px; color: var(--text-dimmer); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px;">智能体中心</div>
+                            <h3 style="font-size: 20px; margin: 0; color: var(--text-light);">工作台</h3>
+                        </div>
+                        <div style="flex: 1; padding: 16px 0; overflow-y: auto;">
+                            <!-- 场景智能巡查员 - 未选中 -->
+                            <div style="padding: 12px 20px; opacity: 0.6; cursor: pointer;">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <div style="width: 36px; height: 36px; background: linear-gradient(135deg, var(--primary), var(--secondary)); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                        <span style="font-size: 16px; font-weight: 700; color: white;">巡查</span>
+                                    </div>
+                                    <div style="flex: 1; font-size: 16px; font-weight: 600; color: var(--text-light);">场景智能巡查员</div>
+                                    <div style="font-size: 12px; color: var(--text-dim);">▶</div>
+                                </div>
+                            </div>
+
+                            <!-- 预警研判助手 - 展开状态 -->
+                            <div style="margin-top: 8px;">
+                                <div style="padding: 12px 20px; background: var(--bg-lighter); cursor: pointer;">
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <div style="width: 36px; height: 36px; background: linear-gradient(135deg, var(--secondary), var(--primary)); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                            <span style="font-size: 16px; font-weight: 700; color: white;">预警</span>
+                                        </div>
+                                        <div style="flex: 1; font-size: 16px; font-weight: 600; color: var(--text-light);">预警研判助手</div>
+                                        <div style="font-size: 12px; color: var(--text-dim);">▼</div>
+                                    </div>
+                                </div>
+
+                                <!-- 子场景 -->
+                                <div style="padding: 10px 20px 10px 56px; opacity: 0.6; cursor: pointer;">
+                                    <div style="font-size: 15px; color: var(--text-light);">单条预警复核</div>
+                                </div>
+
+                                <!-- 子场景2 - 选中状态 -->
+                                <div style="padding: 10px 20px 10px 56px; background: rgba(0, 102, 255, 0.15); border-left: 3px solid var(--primary);">
+                                    <div style="font-size: 15px; font-weight: 600; color: var(--primary);">批量预警汇总</div>
+                                    <div style="font-size: 12px; color: var(--text-dim); margin-top: 4px;">合并同类事件</div>
+                                </div>
+
+                                <div style="padding: 10px 20px 10px 56px; opacity: 0.6; cursor: pointer;">
+                                    <div style="font-size: 15px; color: var(--text-light);">值班交接汇总</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 右侧对话区 -->
+                    <div style="flex: 1; display: flex; flex-direction: column; background: var(--bg-dark);">
+                        <div style="padding: 24px 40px; border-bottom: 1px solid var(--border-color); background: var(--bg-card);">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="font-size: 32px;">📊</div>
+                                <div>
+                                    <div style="font-size: 12px; color: var(--text-dimmer); margin-bottom: 4px;">预警研判助手</div>
+                                    <h2 style="font-size: 32px; margin: 0;">批量预警汇总</h2>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="flex: 1; padding: 32px 40px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px;">
+                            <!-- 对话 -->
+                            <div style="display: flex; justify-content: flex-end;">
+                                <div style="max-width: 70%; background: var(--primary); padding: 16px 20px; border-radius: 16px 16px 4px 16px;">
+                                    <div style="font-size: 18px; color: white;">异常信息太多了，帮我整理一下，哪些需要优先关注？</div>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; justify-content: flex-start;">
+                                <div style="max-width: 80%; background: var(--bg-card); padding: 22px 24px; border-radius: 16px 16px 16px 4px; border: 1px solid var(--border-color);">
+                                    <div style="font-size: 20px; font-weight: 600; color: var(--secondary); margin-bottom: 16px;">最近30分钟异常事件研判</div>
+                                    <div style="font-size: 16px; color: #c8d0e0; line-height: 1.7;">
+                                        <div style="background: rgba(0, 212, 255, 0.1); padding: 16px; border-radius: 10px; margin-bottom: 16px;">
+                                            <strong>原始异常记录：</strong>36条　<strong>按规则合并后：</strong>8组疑似事件
+                                        </div>
+
+                                        <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+                                            <div style="flex: 1; text-align: center; padding: 12px; background: rgba(255, 107, 107, 0.12); border-radius: 8px;">
+                                                <div style="font-size: 28px; font-weight: 700; color: #ff6b6b;">2</div>
+                                                <div style="font-size: 14px; color: #c8d0e0;">高优先级</div>
+                                            </div>
+                                            <div style="flex: 1; text-align: center; padding: 12px; background: rgba(255, 230, 109, 0.12); border-radius: 8px;">
+                                                <div style="font-size: 28px; font-weight: 700; color: #ffe66d;">3</div>
+                                                <div style="font-size: 14px; color: #c8d0e0;">中优先级</div>
+                                            </div>
+                                            <div style="flex: 1; text-align: center; padding: 12px; background: rgba(139, 146, 178, 0.12); border-radius: 8px;">
+                                                <div style="font-size: 28px; font-weight: 700; color: var(--text-dimmer);">3</div>
+                                                <div style="font-size: 14px; color: #c8d0e0;">待复核</div>
+                                            </div>
+                                        </div>
+
+                                        <div style="background: rgba(255, 107, 107, 0.12); padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid #ff6b6b;">
+                                            <strong style="color: #ff6b6b;">码头B区</strong><br>
+                                            10分钟内连续3张图片发现疑似人员，人员可能仍在现场
+                                        </div>
+
+                                        <div style="background: rgba(255, 230, 109, 0.12); padding: 12px; border-radius: 8px; border-left: 3px solid #ffe66d;">
+                                            <strong style="color: #ffe66d;">海堤A段</strong><br>
+                                            最近截图长时间未更新，疑似视频、网络或截图任务异常
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 幻灯片14: 预警研判助手场景3 - 值班交接（优化版） -->
+            <div class="slide">
+                <div class="bg-grid"></div>
+                <div class="slide-content" style="padding: 0; display: flex; height: 100%;">
+                    <!-- 左侧智能体菜单 -->
+                    <div style="width: 240px; background: var(--bg-card); border-right: 1px solid var(--border-color); display: flex; flex-direction: column;">
+                        <div style="padding: 24px 20px; border-bottom: 1px solid var(--border-color);">
+                            <div style="font-size: 11px; color: var(--text-dimmer); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px;">智能体中心</div>
+                            <h3 style="font-size: 20px; margin: 0; color: var(--text-light);">工作台</h3>
+                        </div>
+                        <div style="flex: 1; padding: 16px 0; overflow-y: auto;">
+                            <!-- 场景智能巡查员 - 未选中 -->
+                            <div style="padding: 12px 20px; opacity: 0.6; cursor: pointer;">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <div style="width: 36px; height: 36px; background: linear-gradient(135deg, var(--primary), var(--secondary)); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                        <span style="font-size: 16px; font-weight: 700; color: white;">巡查</span>
+                                    </div>
+                                    <div style="flex: 1; font-size: 16px; font-weight: 600; color: var(--text-light);">场景智能巡查员</div>
+                                    <div style="font-size: 12px; color: var(--text-dim);">▶</div>
+                                </div>
+                            </div>
+
+                            <!-- 预警研判助手 - 展开状态 -->
+                            <div style="margin-top: 8px;">
+                                <div style="padding: 12px 20px; background: var(--bg-lighter); cursor: pointer;">
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <div style="width: 36px; height: 36px; background: linear-gradient(135deg, var(--secondary), var(--primary)); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                            <span style="font-size: 16px; font-weight: 700; color: white;">预警</span>
+                                        </div>
+                                        <div style="flex: 1; font-size: 16px; font-weight: 600; color: var(--text-light);">预警研判助手</div>
+                                        <div style="font-size: 12px; color: var(--text-dim);">▼</div>
+                                    </div>
+                                </div>
+
+                                <!-- 子场景 -->
+                                <div style="padding: 10px 20px 10px 56px; opacity: 0.6; cursor: pointer;">
+                                    <div style="font-size: 15px; color: var(--text-light);">单条预警复核</div>
+                                </div>
+
+                                <div style="padding: 10px 20px 10px 56px; opacity: 0.6; cursor: pointer;">
+                                    <div style="font-size: 15px; color: var(--text-light);">批量预警汇总</div>
+                                </div>
+
+                                <!-- 子场景3 - 选中状态 -->
+                                <div style="padding: 10px 20px 10px 56px; background: rgba(0, 102, 255, 0.15); border-left: 3px solid var(--primary);">
+                                    <div style="font-size: 15px; font-weight: 600; color: var(--primary);">值班交接汇总</div>
+                                    <div style="font-size: 12px; color: var(--text-dim); margin-top: 4px;">生成交接报告</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 右侧对话区 -->
+                    <div style="flex: 1; display: flex; flex-direction: column; background: var(--bg-dark);">
+                        <div style="padding: 24px 40px; border-bottom: 1px solid var(--border-color); background: var(--bg-card);">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="font-size: 32px;">📋</div>
+                                <div>
+                                    <div style="font-size: 12px; color: var(--text-dimmer); margin-bottom: 4px;">预警研判助手</div>
+                                    <h2 style="font-size: 32px; margin: 0;">值班交接汇总</h2>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="flex: 1; padding: 32px 40px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px;">
+                            <!-- 对话 -->
+                            <div style="display: flex; justify-content: flex-end;">
+                                <div style="max-width: 70%; background: var(--primary); padding: 16px 20px; border-radius: 16px 16px 4px 16px;">
+                                    <div style="font-size: 18px; color: white;">汇总今天8点到16点的异常情况，我要准备交接班</div>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; justify-content: flex-start;">
+                                <div style="max-width: 80%; background: var(--bg-card); padding: 22px 24px; border-radius: 16px 16px 16px 4px; border: 1px solid var(--border-color);">
+                                    <div style="font-size: 20px; font-weight: 600; color: var(--secondary); margin-bottom: 16px;">本班次异常情况汇总</div>
+                                    <div style="font-size: 16px; color: #c8d0e0; line-height: 1.7;">
+                                        <div style="background: rgba(0, 212, 255, 0.1); padding: 16px; border-radius: 10px; margin-bottom: 16px;">
+                                            <strong>原始异常记录：</strong>42条　<strong>合并后涉及：</strong>11组事件
+                                        </div>
+
+                                        <strong>人工反馈统计：</strong>
+                                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 12px 0;">
+                                            <div style="padding: 10px; background: rgba(78, 205, 196, 0.1); border-radius: 6px;">
+                                                ✅ 真实预警：<strong>6组</strong>
+                                            </div>
+                                            <div style="padding: 10px; background: rgba(255, 107, 107, 0.1); border-radius: 6px;">
+                                                ❌ 误报：<strong>2组</strong>
+                                            </div>
+                                            <div style="padding: 10px; background: rgba(139, 146, 178, 0.1); border-radius: 6px;">
+                                                ❓ 无法判断：<strong>1组</strong>
+                                            </div>
+                                            <div style="padding: 10px; background: rgba(255, 230, 109, 0.1); border-radius: 6px;">
+                                                ⏳ 尚未反馈：<strong>2组</strong>
+                                            </div>
+                                        </div>
+
+                                        <strong>重点点位：</strong>江堤2号（多次人员进入）、海堤A段（多次截图未更新）、观景台B（人员密集频繁）
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 幻灯片15: 研判助手 - 不相关提问场景 -->
+            <div class="slide">
+                <div class="bg-grid"></div>
+                <div class="slide-content" style="padding: 0; display: flex; height: 100%;">
+                    <!-- 左侧智能体菜单 -->
+                    <div style="width: 240px; background: var(--bg-card); border-right: 1px solid var(--border-color); display: flex; flex-direction: column;">
+                        <div style="padding: 24px 20px; border-bottom: 1px solid var(--border-color);">
+                            <div style="font-size: 11px; color: var(--text-dimmer); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px;">智能体中心</div>
+                            <h3 style="font-size: 20px; margin: 0; color: var(--text-light);">工作台</h3>
+                        </div>
+                        <div style="flex: 1; padding: 16px 0; overflow-y: auto;">
+                            <!-- 场景智能巡查员 - 未选中 -->
+                            <div style="padding: 12px 20px; opacity: 0.6; cursor: pointer;">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <div style="width: 36px; height: 36px; background: linear-gradient(135deg, var(--primary), var(--secondary)); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                        <span style="font-size: 16px; font-weight: 700; color: white;">巡查</span>
+                                    </div>
+                                    <div style="flex: 1; font-size: 16px; font-weight: 600; color: var(--text-light);">场景智能巡查员</div>
+                                    <div style="font-size: 12px; color: var(--text-dim);">▶</div>
+                                </div>
+                            </div>
+
+                            <!-- 预警研判助手 - 展开状态 -->
+                            <div style="margin-top: 8px;">
+                                <div style="padding: 12px 20px; background: var(--bg-lighter); cursor: pointer;">
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <div style="width: 36px; height: 36px; background: linear-gradient(135deg, var(--secondary), var(--primary)); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                            <span style="font-size: 16px; font-weight: 700; color: white;">预警</span>
+                                        </div>
+                                        <div style="flex: 1; font-size: 16px; font-weight: 600; color: var(--text-light);">预警研判助手</div>
+                                        <div style="font-size: 12px; color: var(--text-dim);">▼</div>
+                                    </div>
+                                </div>
+
+                                <!-- 所有子场景都显示为未选中 -->
+                                <div style="padding: 10px 20px 10px 56px; opacity: 0.6; cursor: pointer;">
+                                    <div style="font-size: 15px; color: var(--text-light);">单条预警复核</div>
+                                </div>
+
+                                <div style="padding: 10px 20px 10px 56px; opacity: 0.6; cursor: pointer;">
+                                    <div style="font-size: 15px; color: var(--text-light);">批量预警汇总</div>
+                                </div>
+
+                                <div style="padding: 10px 20px 10px 56px; opacity: 0.6; cursor: pointer;">
+                                    <div style="font-size: 15px; color: var(--text-light);">值班交接汇总</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 右侧对话区 -->
+                    <div style="flex: 1; display: flex; flex-direction: column; background: var(--bg-dark);">
+                        <div style="padding: 24px 40px; border-bottom: 1px solid var(--border-color); background: var(--bg-card);">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="font-size: 32px;">💡</div>
+                                <div>
+                                    <div style="font-size: 12px; color: var(--text-dimmer); margin-bottom: 4px;">预警研判助手</div>
+                                    <h2 style="font-size: 32px; margin: 0;">能力范围演示</h2>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="flex: 1; padding: 32px 40px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px;">
+                            <!-- 对话1 -->
+                            <div style="display: flex; justify-content: flex-end;">
+                                <div style="max-width: 60%; background: var(--primary); padding: 14px 18px; border-radius: 16px 16px 4px 16px;">
+                                    <div style="font-size: 17px; color: white;">明天天气怎么样？</div>
+                                </div>
+                            </div>
+                            <div style="display: flex; justify-content: flex-start;">
+                                <div style="max-width: 75%; background: var(--bg-card); padding: 16px 20px; border-radius: 16px 16px 16px 4px; border: 1px solid var(--border-color);">
+                                    <div style="font-size: 16px; color: #c8d0e0; line-height: 1.7;">
+                                        我是预警研判助手，主要负责整理和研判视频巡查产生的异常线索，暂时没有接入天气信息。<br><br>
+                                        我可以帮你：研判异常事件的风险等级、整理合并同类异常、生成交接班汇总报告
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 对话2 -->
+                            <div style="display: flex; justify-content: flex-end;">
+                                <div style="max-width: 60%; background: var(--primary); padding: 14px 18px; border-radius: 16px 16px 4px 16px;">
+                                    <div style="font-size: 17px; color: white;">帮我订个外卖</div>
+                                </div>
+                            </div>
+                            <div style="display: flex; justify-content: flex-start;">
+                                <div style="max-width: 75%; background: var(--bg-card); padding: 16px 20px; border-radius: 16px 16px 16px 4px; border: 1px solid var(--border-color);">
+                                    <div style="font-size: 16px; color: #c8d0e0; line-height: 1.7;">
+                                        我是预警研判助手，专注于视频监控异常线索的研判和整理，不能处理订餐类请求。<br><br>
+                                        你可以询问我：哪些异常需要优先关注、某个点位今天出现过几次异常、本班次的异常情况汇总
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 对话3 -->
+                            <div style="display: flex; justify-content: flex-end;">
+                                <div style="max-width: 60%; background: var(--primary); padding: 14px 18px; border-radius: 16px 16px 4px 16px;">
+                                    <div style="font-size: 17px; color: white;">这个数学题怎么解？</div>
+                                </div>
+                            </div>
+                            <div style="display: flex; justify-content: flex-start;">
+                                <div style="max-width: 75%; background: var(--bg-card); padding: 16px 20px; border-radius: 16px 16px 16px 4px; border: 1px solid var(--border-color);">
+                                    <div style="font-size: 16px; color: #c8d0e0; line-height: 1.7;">
+                                        我的专长是研判视频监控异常事件，不具备数学解题能力。<br><br>
+                                        我可以协助你：解释异常原因和风险依据、批量整理异常信息、查询历史异常记录
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 说明卡片 -->
+                            <div style="margin-top: 24px; padding: 20px; background: rgba(255, 230, 109, 0.08); border-radius: 12px; border-left: 3px solid #ffe66d;">
+                                <div style="font-size: 18px; font-weight: 600; color: #ffe66d; margin-bottom: 12px;">💡 设计原则</div>
+                                <div style="font-size: 15px; color: #c8d0e0; line-height: 1.7;">
+                                    智能体的拒绝回答不是系统报错，而是礼貌地说明能力范围，并提示用户能够使用的功能，保持专业、友好的交互体验。
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 幻灯片16: 两个智能体协同工作 -->
+            <div class="slide">
+                <div class="bg-grid"></div>
+                <div class="slide-content">
+                    <div class="chip">协同机制</div>
+                    <h2>智能体协同工作流程</h2>
+                    <div style="margin-top: 48px;">
+                        <div style="display: flex; flex-direction: column; gap: 24px;">
+                            <div class="flow-step">
+                                <div class="step-number">1</div>
+                                <div class="step-title">启动巡查</div>
+                                <div class="step-text">
+                                    员工启动场景 或 定时任务自动启动
+                                </div>
+                            </div>
+
+                            <div class="flow-step">
+                                <div class="step-number">2</div>
+                                <div class="step-title">场景智能巡查员工作</div>
+                                <div class="step-text">
+                                    加载点位和检查任务 → 获取最新定时截图 → 多模态大模型输出结构化观察结果 → 场景规则确定风险等级
+                                </div>
+                            </div>
+
+                            <div class="flow-step">
+                                <div class="step-number">3</div>
+                                <div class="step-title">生成巡查结果</div>
+                                <div class="step-text">
+                                    生成正常结果、异常线索或无法判断 → 保存原始记录 → 按规则触发提醒
+                                </div>
+                            </div>
+
+                            <div class="flow-step">
+                                <div class="step-number">4</div>
+                                <div class="step-title">预警研判助手工作</div>
+                                <div class="step-text">
+                                    接收异常线索 → 解释风险原因 → 合并同类事件 → 查询和汇总
+                                </div>
+                            </div>
+
+                            <div class="flow-step">
+                                <div class="step-number">5</div>
+                                <div class="step-title">推送和反馈</div>
+                                <div class="step-text">
+                                    通过现有渠道推送研判结果 → 接收人工反馈（真实预警/误报/无法判断）
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- 幻灯片17: 总结 -->
+            <div class="slide">
+                <div class="bg-grid"></div>
+                <div class="bg-glow"></div>
+                <div class="slide-content" style="display: flex; flex-direction: column; justify-content: center; height: 100%;">
+                    <div class="chip">总结与展望</div>
+                    <h2 style="margin-bottom: 60px;">视频云平台智能体方案</h2>
+
+                    <div style="display: flex; gap: 60px; margin-bottom: 80px;">
+                        <div style="flex: 1;">
+                            <h3 style="color: var(--secondary); margin-bottom: 32px;">核心成果</h3>
+                            <ul style="margin: 0;">
+                                <li style="font-size: 26px;">两个协同智能体覆盖巡查-研判全流程</li>
+                                <li style="font-size: 26px;">支持观潮、台风、防汛等多种场景</li>
+                                <li style="font-size: 26px;">显著提升值班效率和异常发现能力</li>
+                                <li style="font-size: 26px;">用户界面简洁易用，易于理解</li>
+                            </ul>
+                        </div>
+
+                        <div style="flex: 1;">
+                            <h3 style="color: var(--secondary); margin-bottom: 32px;">下一步计划</h3>
+                            <ul style="margin: 0;">
+                                <li style="font-size: 26px;">验收效果，确定正式上线能力</li>
+                                <li style="font-size: 26px;">扩展更多业务场景支持</li>
+                                <li style="font-size: 26px;">优化模型准确率和响应速度</li>
+                                <li style="font-size: 26px;">持续收集用户反馈改进体验</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div style="text-align: center; padding: 48px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 24px;">
+                        <div style="font-size: 48px; font-weight: 700; background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+                            让AI替代人眼，24小时守护安全
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 导航控制 -->
+    <div class="deck-controls">
+        <button class="nav-btn" id="prevBtn">←</button>
+        <span class="slide-counter"><span id="currentSlide">1</span> / <span id="totalSlides">17</span></span>
+        <button class="nav-btn" id="nextBtn">→</button>
+    </div>
+
+    <script>
+        // Stage scaling
+        function scaleStage() {
+            const viewport = document.querySelector('.deck-viewport');
+            const stage = document.querySelector('.deck-stage');
+            const vw = viewport.clientWidth;
+            const vh = viewport.clientHeight;
+            const scale = Math.min(vw / 1920, vh / 1080);
+            const x = (vw - 1920 * scale) / 2;
+            const y = (vh - 1080 * scale) / 2;
+            stage.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
+        }
+
+        window.addEventListener('resize', scaleStage);
+        window.addEventListener('load', scaleStage);
+        scaleStage();
+
+        // Slide navigation
+        const slides = document.querySelectorAll('.slide');
+        let currentSlide = 0;
+        const totalSlides = slides.length;
+
+        document.getElementById('totalSlides').textContent = totalSlides;
+
+        function showSlide(n) {
+            slides[currentSlide].classList.remove('active');
+            currentSlide = (n + totalSlides) % totalSlides;
+            slides[currentSlide].classList.add('active');
+            document.getElementById('currentSlide').textContent = currentSlide + 1;
+
+            // Update navigation buttons
+            document.getElementById('prevBtn').disabled = currentSlide === 0;
+            document.getElementById('nextBtn').disabled = currentSlide === totalSlides - 1;
+        }
+
+        document.getElementById('prevBtn').addEventListener('click', () => {
+            if (currentSlide > 0) showSlide(currentSlide - 1);
+        });
+
+        document.getElementById('nextBtn').addEventListener('click', () => {
+            if (currentSlide < totalSlides - 1) showSlide(currentSlide + 1);
+        });
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                if (currentSlide > 0) showSlide(currentSlide - 1);
+            } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') {
+                e.preventDefault();
+                if (currentSlide < totalSlides - 1) showSlide(currentSlide + 1);
+            } else if (e.key === 'Home') {
+                showSlide(0);
+            } else if (e.key === 'End') {
+                showSlide(totalSlides - 1);
+            }
+        });
+
+        // Touch support
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        document.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+        });
+
+        document.addEventListener('touchend', (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        });
+
+        function handleSwipe() {
+            if (touchEndX < touchStartX - 50 && currentSlide < totalSlides - 1) {
+                showSlide(currentSlide + 1);
+            }
+            if (touchEndX > touchStartX + 50 && currentSlide > 0) {
+                showSlide(currentSlide - 1);
+            }
+        }
+
+        // Initialize
+        showSlide(0);
+    </script>
+</body>
+</html>
