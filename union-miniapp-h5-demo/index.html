@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>自然生活圈 · H5 交互演示</title>
+<meta name="description" content="集团工会自然生活圈 H5 交互演示，覆盖通知公告、交友、疗休养、福利、兴趣小组与个人中心。">
+<meta name="theme-color" content="#1E7FC0">
+<link rel="icon" type="image/svg+xml" href="assets/logo-web.svg">
+<style>
+  :root{
+    --red:#1E7FC0; --red-d:#1668A3; --red-l:#E9F4FB; --gold:#D4A017;
+    --teal:#23A192; --lgreen:#7CC24D; --dblue:#1B5FA8; --cyan:#0E93B8;
+    --bg:#F2F3F7; --card:#FFFFFF; --ink:#222; --sub:#888; --line:#EBEBEB;
+    --green:#2BA471; --orange:#ED7B2F; --blue:#1B5FA8;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;font-family:"PingFang SC","Microsoft YaHei",sans-serif;}
+  html{background:var(--bg);}
+  body{background:radial-gradient(circle at 70% 12%,#E9F6F3 0,transparent 28%),var(--bg);color:var(--ink);display:flex;min-height:100vh;min-height:100dvh;overscroll-behavior:none;-webkit-tap-highlight-color:transparent;}
+  /* ---- 左侧导航 ---- */
+  .sidebar{width:250px;background:#fff;border-right:1px solid var(--line);padding:20px 14px;position:sticky;top:0;height:100vh;overflow-y:auto;}
+  .sidebar h1{font-size:16px;color:var(--red);margin-bottom:4px;}
+  .sidebar .ver{font-size:11px;color:var(--sub);margin-bottom:16px;}
+  .nav-group{font-size:11px;color:var(--sub);margin:14px 0 6px;letter-spacing:1px;}
+  .nav-item{padding:8px 10px;border-radius:8px;font-size:13px;cursor:pointer;margin-bottom:2px;display:flex;gap:8px;align-items:center;color:#444;}
+  .nav-item:hover{background:var(--red-l);}
+  .nav-item.active{background:var(--red);color:#fff;}
+  .nav-item .no{font-size:10px;opacity:.6;width:20px;}
+  /* ---- 手机框 ---- */
+  .stage{flex:1;display:flex;justify-content:center;align-items:center;padding:30px 20px;min-width:0;}
+  .phone{width:375px;height:min(760px,calc(100vh - 60px));height:min(760px,calc(100dvh - 60px));background:#fff;border-radius:40px;box-shadow:0 20px 55px rgba(27,95,168,.22);overflow:hidden;position:relative;border:10px solid #14202A;flex-shrink:0;}
+  .statusbar{height:34px;display:flex;justify-content:space-between;align-items:center;padding:0 22px;font-size:12px;font-weight:600;background:var(--red);color:#fff;}
+  .navbar{height:44px;background:var(--red);color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;position:relative;}
+  .navbar .back{position:absolute;left:14px;font-size:18px;cursor:pointer;font-weight:400;}
+  .navbar .more{position:absolute;right:10px;min-width:36px;min-height:36px;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;font-weight:400;border-radius:18px;}
+  .navbar .more:active{background:rgba(255,255,255,.16);}
+  .screen{display:none;height:calc(100% - 34px - 44px);overflow-y:auto;background:var(--bg);}
+  .screen.active{display:block;}
+  .screen::-webkit-scrollbar{width:0;}
+  /* ---- 通用组件 ---- */
+  .card{background:var(--card);border-radius:12px;margin:10px 12px;padding:14px;}
+  .tag{display:inline-block;font-size:10px;padding:2px 6px;border-radius:4px;margin-right:4px;}
+  .tag-r{background:var(--red-l);color:var(--red);}
+  .tag-b{background:#E8F0FE;color:var(--blue);}
+  .tag-g{background:#E6F6EF;color:var(--green);}
+  .tag-o{background:#FDF3E7;color:var(--orange);}
+  .btn{display:block;text-align:center;background:var(--red);color:#fff;border-radius:22px;padding:11px;font-size:14px;margin:12px;cursor:pointer;font-weight:600;user-select:none;transition:transform .16s ease,filter .16s ease;}
+  .btn:active,.quick-card:active,.quick-hero:active,.list-item:active{transform:scale(.985);filter:brightness(.97);}
+  [role="button"]:focus-visible,.btn:focus-visible{outline:3px solid rgba(124,194,77,.65);outline-offset:2px;}
+  .btn.ghost{background:#fff;color:var(--red);border:1px solid var(--red);}
+  .btn.gray{background:#E5E6EB;color:#666;}
+  .sec-title{font-size:15px;font-weight:600;padding:14px 14px 6px;display:flex;justify-content:space-between;align-items:center;}
+  .sec-title .more-t{font-size:11px;color:var(--sub);cursor:pointer;font-weight:400;}
+  .avatar{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+  .row{display:flex;align-items:center;gap:10px;}
+  .muted{font-size:11px;color:var(--sub);}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--red);display:inline-block;}
+  /* 首页 */
+  .greet{display:flex;justify-content:space-between;align-items:baseline;padding:14px 16px 2px;}
+  .greet .g1{font-size:17px;font-weight:700;}
+  .greet .g2{font-size:11px;color:var(--sub);}
+  .banner{margin:0;border-radius:0;height:200px;color:#fff;position:relative;overflow:hidden;}
+  .banner-track{display:flex;height:100%;transition:transform .5s ease;}
+  .slide{min-width:100%;height:100%;padding:20px 22px;position:relative;}
+  .slide h3{font-size:18px;margin-bottom:7px;}
+  .slide p{font-size:11px;opacity:.88;line-height:1.6;}
+  .slide .circle{position:absolute;right:-30px;top:-30px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,.12);}
+  .slide .blogo{width:44px;height:44px;border-radius:50%;background:#fff;padding:3px;box-shadow:0 2px 8px rgba(0,0,0,.15);}
+  .slide .slink{display:inline-block;margin-top:8px;font-size:10px;background:rgba(255,255,255,.22);padding:4px 10px;border-radius:10px;}
+  .banner .dots{position:absolute;bottom:10px;left:22px;display:flex;gap:5px;z-index:2;}
+  .banner .dots i{width:6px;height:6px;border-radius:3px;background:rgba(255,255,255,.45);transition:all .3s;}
+  .banner .dots i.on{width:16px;background:#fff;}
+  .ticker{display:flex;align-items:center;gap:8px;background:#fff;margin:10px 12px 8px;border-radius:12px;padding:10px 14px;cursor:pointer;}
+  .ticker .tk-ico{color:var(--red);font-size:13px;flex-shrink:0;}
+  .ticker .tk-body{flex:1;overflow:hidden;height:18px;position:relative;}
+  .ticker .tk-item{position:absolute;width:100%;font-size:12px;color:#444;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:transform .4s ease,opacity .4s ease;}
+  .ticker .tk-more{font-size:11px;color:var(--sub);flex-shrink:0;}
+  /* 快捷入口（重新设计：大卡式） */
+  .quick-wrap{padding:2px 12px 12px;display:flex;flex-direction:column;gap:12px;}
+  /* 顶部双入口（通知公告 + 个人中心） */
+  .top-duo{display:flex;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 3px 10px rgba(0,0,0,.06);}
+  .top-duo .td{flex:1;display:flex;align-items:center;gap:8px;padding:0 12px;height:50px;cursor:pointer;box-sizing:border-box;}
+  .top-duo .td:active{background:#F7F9FB;}
+  .top-duo .td .ti{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;position:relative;}
+  .top-duo .rdot{position:absolute;top:-3px;right:-3px;width:9px;height:9px;border-radius:50%;background:#FF3B30;border:2px solid #fff;}
+  /* 用户卡片（嵌入banner底部） */
+  .ucard{position:relative;z-index:3;margin:-22px 12px 0;background:#fff;border-radius:12px;box-shadow:0 4px 14px rgba(0,0,0,.10);padding:13px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;}
+  .ucard .uav{width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,#1B5FA8,#23A192);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:600;flex-shrink:0;position:relative;}
+  .ucard .rdot{position:absolute;top:0;right:0;width:11px;height:11px;border-radius:50%;background:#FF3B30;border:2px solid #fff;}
+  .ucard .un{font-size:15px;font-weight:700;}
+  .ucard .ui{font-size:10px;color:var(--sub);margin-top:3px;}
+  .ucard .uarrow{margin-left:auto;color:#ccc;font-size:16px;}
+  .top-duo .td .tt{font-size:13px;font-weight:600;}
+  .top-duo .td .tdesc{font-size:9px;color:var(--sub);margin-top:1px;}
+  .top-duo .td .tarrow{margin-left:auto;color:#ccc;font-size:15px;}
+  .top-duo .sep{width:1px;background:var(--line);}
+  .quick-hero{border-radius:16px;padding:18px;display:flex;align-items:center;gap:14px;cursor:pointer;color:#fff;background:linear-gradient(120deg,#1B5FA8,#1E7FC0);box-shadow:0 4px 14px rgba(30,127,192,.25);}
+  .quick-hero .qi{width:56px;height:56px;border-radius:14px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:30px;flex-shrink:0;}
+  .quick-hero .qt{font-size:17px;font-weight:700;}
+  .quick-hero .qd{font-size:11px;opacity:.85;margin-top:5px;}
+  .quick-hero .qarrow{margin-left:auto;font-size:20px;opacity:.8;}
+  .quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .quick-card{border-radius:10px;padding:18px 16px;cursor:pointer;color:#fff;position:relative;min-height:104px;box-shadow:0 4px 12px rgba(0,0,0,.10);overflow:hidden;}
+  .quick-card .wmark{position:absolute;right:-22px;bottom:-26px;width:112px;opacity:.22;pointer-events:none;}
+  .quick-card .qi{width:30px;height:30px;}
+  .quick-card .qi svg{width:100%;height:100%;fill:#fff;}
+  .quick-card .qt{font-size:15px;font-weight:700;margin-top:10px;}
+  .quick-card .qd{font-size:10px;opacity:.85;margin-top:4px;line-height:1.5;}
+  .quick-card .qnum{position:absolute;top:14px;right:14px;font-size:10px;background:rgba(255,255,255,.25);padding:3px 8px;border-radius:10px;}
+  /* 列表项 */
+  .list-item{background:#fff;border-radius:12px;margin:10px 12px;padding:13px 14px;cursor:pointer;}
+  .list-item .t{font-size:14px;font-weight:600;margin-bottom:5px;line-height:1.4;}
+  .list-item .d{font-size:11px;color:var(--sub);display:flex;justify-content:space-between;align-items:center;}
+  .unread{width:7px;height:7px;background:var(--red);border-radius:50%;display:inline-block;margin-right:5px;}
+  /* 详情 */
+  .detail{background:#fff;padding:18px 16px;margin:10px 12px;border-radius:12px;font-size:13px;line-height:1.9;color:#333;}
+  .attach{display:flex;align-items:center;gap:8px;background:#F7F8FA;border-radius:8px;padding:10px;margin-top:8px;font-size:12px;}
+  /* 缘分墙 */
+  .fate-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px;}
+  .fate-card{background:#fff;border-radius:10px;overflow:hidden;cursor:pointer;}
+  .fate-photo{height:120px;display:flex;align-items:center;justify-content:center;font-size:44px;position:relative;}
+  .fate-photo .heart{position:absolute;right:8px;bottom:8px;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.95);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.15);cursor:pointer;z-index:2;}
+  .fate-photo .heart svg{width:16px;height:16px;fill:none;stroke:#F25C7E;stroke-width:2.2;}
+  .fate-photo .heart.on svg{fill:#F25C7E;}
+  .fate-photo .mutual{position:absolute;left:8px;top:8px;background:#F25C7E;color:#fff;font-size:9px;padding:3px 7px;border-radius:8px;z-index:2;}
+  .fate-info{padding:9px 10px;}
+  .fate-info .n{font-size:13px;font-weight:600;margin-bottom:3px;}
+  /* 资料填写 */
+  .fsteps{display:flex;align-items:center;justify-content:center;padding:14px 16px 2px;font-size:11px;color:var(--sub);}
+  .fsteps .fs{display:flex;align-items:center;gap:6px;}
+  .fsteps .fs i{width:20px;height:20px;border-radius:50%;background:#E0E6EA;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-style:normal;}
+  .fsteps .fs.on{color:#23A192;font-weight:600;}
+  .fsteps .fs.on i{background:#23A192;}
+  .fsteps .fline{width:44px;height:2px;background:#E0E6EA;margin:0 10px;}
+  .up-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:4px 0 2px;}
+  .up-box{aspect-ratio:1;border-radius:10px;background:#F2F5F7;border:1.5px dashed #C9D4DA;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:10px;color:var(--sub);cursor:pointer;position:relative;gap:4px;}
+  .up-box .ic{font-size:22px;}
+  .up-box.cover{border:1.5px solid #23A192;background:linear-gradient(160deg,#D6EBF7,#E9F6F3);font-size:34px;}
+  .up-box .badge{position:absolute;top:-7px;left:-5px;background:#23A192;color:#fff;font-size:9px;padding:2px 7px;border-radius:8px;}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;padding:2px 0;}
+  .chip{font-size:12px;padding:6px 12px;border-radius:14px;background:#F2F5F7;color:#555;cursor:pointer;border:1px solid transparent;}
+  .chip.on{background:#E9F6F3;color:#23A192;border-color:#23A192;font-weight:600;}
+  .farea{background:#F7F9FB;border-radius:10px;padding:10px 12px;font-size:12px;color:#666;line-height:1.7;min-height:56px;}
+  .req{color:#F25C7E;}
+  /* 资料详情/互选 */
+  .dt-photo{height:220px;display:flex;align-items:center;justify-content:center;font-size:88px;position:relative;}
+  .dt-photo .heart{position:absolute;right:14px;bottom:14px;width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.95);display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(0,0,0,.18);cursor:pointer;}
+  .dt-photo .heart svg{width:22px;height:22px;fill:none;stroke:#F25C7E;stroke-width:2.2;}
+  .dt-photo .heart.on svg{fill:#F25C7E;}
+  .dt-photo .pnum{position:absolute;left:14px;bottom:14px;background:rgba(0,0,0,.35);color:#fff;font-size:10px;padding:3px 9px;border-radius:10px;}
+  .album{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px;}
+  .album .al{aspect-ratio:1;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:34px;}
+  .kv{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid #F5F5F5;font-size:12px;}
+  .kv:last-child{border:none;}
+  .kv .k{color:var(--sub);}
+  .sec-cap{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;margin:14px 12px 8px;}
+  .sec-cap::before{content:"";width:4px;height:14px;border-radius:2px;background:linear-gradient(180deg,#1B5FA8,#23A192);}
+  /* 步骤条 */
+  .steps{display:flex;margin:14px 16px;}
+  .step{flex:1;text-align:center;font-size:10px;color:var(--sub);position:relative;padding-top:16px;}
+  .step::before{content:"";position:absolute;top:4px;left:50%;transform:translateX(-50%);width:10px;height:10px;border-radius:50%;background:#ddd;}
+  .step.done{color:var(--red);}
+  .step.done::before{background:var(--red);}
+  .step::after{content:"";position:absolute;top:8px;left:calc(50% + 8px);width:calc(100% - 16px);height:2px;background:#eee;}
+  .step:last-child::after{display:none;}
+  /* 表单 */
+  .form-item{background:#fff;padding:13px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #F5F5F5;font-size:13px;}
+  .form-item .v{color:var(--sub);font-size:12px;}
+  /* 二维码 */
+  .qr{width:170px;height:170px;margin:14px auto;border-radius:12px;background:repeating-conic-gradient(#222 0 25%,#fff 0 50%) 0 0/24px 24px;border:8px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,.12);}
+  .toast{position:absolute;top:90px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.75);color:#fff;font-size:12px;padding:8px 16px;border-radius:16px;display:none;z-index:99;white-space:nowrap;}
+  /* ---- 标注模式 ---- */
+  .phone.annotating{cursor:crosshair;}
+  .phone.annotating *{cursor:crosshair !important;}
+  .marker{position:absolute;width:24px;height:24px;border-radius:50% 50% 50% 4px;background:#FF5722;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:60;box-shadow:0 2px 8px rgba(255,87,34,.5);transform:translate(-50%,-100%);}
+  .marker:hover{transform:translate(-50%,-100%) scale(1.15);}
+  #anno-list{margin-top:8px;}
+  .anno-item{background:#FFF4F1;border-left:3px solid #FF5722;border-radius:6px;padding:7px 9px;margin-bottom:6px;font-size:11px;color:#555;}
+  .anno-item .ap{color:var(--red);font-weight:600;}
+  .anno-item .ax{float:right;cursor:pointer;color:#bbb;font-size:13px;}
+  .anno-item .ax:hover{color:#FF5722;}
+  .nav-item.anno-on{background:#FF5722;color:#fff;}
+  .stat-row{display:flex;justify-content:space-around;text-align:center;padding:8px 0;}
+  .stat-row .num{font-size:18px;font-weight:700;color:var(--red);}
+  .prog{height:6px;background:#F0F0F0;border-radius:3px;overflow:hidden;margin-top:6px;}
+  .prog i{display:block;height:100%;background:linear-gradient(90deg,var(--red),#7CC24D);border-radius:3px;}
+  /* 页面目录：桌面端由左侧导航进入，移动端由右上角“···”呼出。 */
+  .mobile-menu{position:absolute;inset:0;z-index:120;display:none;}
+  .mobile-menu.open{display:block;}
+  .menu-backdrop{position:absolute;inset:0;border:0;background:rgba(14,32,50,.42);backdrop-filter:blur(2px);}
+  .menu-panel{position:absolute;left:10px;right:10px;top:82px;max-height:calc(100% - 96px);overflow:auto;background:#fff;border-radius:18px;padding:14px;box-shadow:0 16px 40px rgba(14,32,50,.28);}
+  .menu-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-size:15px;font-weight:700;}
+  .menu-close{width:32px;height:32px;border:0;border-radius:50%;background:#F2F3F7;color:#56616B;font-size:18px;cursor:pointer;}
+  .mobile-nav-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .mobile-nav-link{border:1px solid #E7EDF2;background:#F8FAFB;color:#30414F;border-radius:11px;padding:10px;text-align:left;font-size:12px;cursor:pointer;}
+  .mobile-nav-link.on{border-color:var(--red);background:var(--red-l);color:var(--red);font-weight:700;}
+  @media (max-width:720px){
+    .sidebar{display:none;}
+    .stage{padding:0;display:block;}
+    .phone{width:100vw;height:100vh;height:100dvh;border:0;border-radius:0;box-shadow:none;}
+    .statusbar{padding-top:env(safe-area-inset-top);height:calc(34px + env(safe-area-inset-top));}
+    .screen{height:calc(100% - 34px - 44px - env(safe-area-inset-top));}
+    .btn{min-height:44px;display:flex;align-items:center;justify-content:center;}
+  }
+  @media (max-width:360px){.quick-card{padding:15px 13px}.quick-grid{gap:9px}.card{margin-left:9px;margin-right:9px}.mobile-nav-grid{grid-template-columns:1fr;}}
+  @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important}.banner-track{transform:none!important}.slide:not(:first-child){display:none}.banner .dots{display:none}}
+</style>
+</head>
+<body>
+
+<!-- ========== 左侧导航 ========== -->
+<div class="sidebar">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+    <img src="assets/logo-web.svg" alt="自然生活圈" style="width:40px;height:40px;border-radius:50%;">
+    <h1 style="margin:0;">自然生活圈 · H5 Demo</h1>
+  </div>
+  <div class="ver">V1.2 · 2026-09-01 · 可点击演示</div>
+  <div class="nav-group">通用</div>
+  <div class="nav-item active" onclick="go('home',this)"><span class="no">01</span>🏠 首页</div>
+  <div class="nav-item" onclick="go('login',this)"><span class="no">02</span>🔐 登录/绑定</div>
+  <div class="nav-group">通知公告</div>
+  <div class="nav-item" onclick="go('notice-list',this)"><span class="no">03</span>📢 通知列表</div>
+  <div class="nav-item" onclick="go('notice-detail',this)"><span class="no">04</span>📄 通知详情（回执）</div>
+  <div class="nav-group">缘来有你（交友流程）</div>
+  <div class="nav-item" onclick="go('date-form1',this)"><span class="no">05</span>📝 填写·基本信息</div>
+  <div class="nav-item" onclick="go('date-form2',this)"><span class="no">06</span>💌 填写·交友信息</div>
+  <div class="nav-item" onclick="go('date-review',this)"><span class="no">07</span>⏳ 资料审核</div>
+  <div class="nav-item" onclick="go('date-wall',this)"><span class="no">08</span>💗 缘分墙</div>
+  <div class="nav-item" onclick="go('date-detail',this)"><span class="no">09</span>👤 缘分资料详情</div>
+  <div class="nav-item" onclick="go('date-mutual',this)"><span class="no">10</span>💞 互选成功（解锁）</div>
+  <div class="nav-item" onclick="go('date-event',this)"><span class="no">11</span>🎉 联谊活动报名</div>
+  <div class="nav-group">疗休养</div>
+  <div class="nav-item" onclick="go('tour-list',this)"><span class="no">12</span>🌿 疗休养路线</div>
+  <div class="nav-item" onclick="go('tour-detail',this)"><span class="no">13</span>📝 路线详情+报名</div>
+  <div class="nav-item" onclick="go('tour-mine',this)"><span class="no">14</span>📋 我的报名</div>
+  <div class="nav-group">工会福利</div>
+  <div class="nav-item" onclick="go('welfare-list',this)"><span class="no">15</span>🎁 福利中心</div>
+  <div class="nav-item" onclick="go('welfare-detail',this)"><span class="no">16</span>✍️ 领取确认</div>
+  <div class="nav-group">兴趣小组</div>
+  <div class="nav-item" onclick="go('group-list',this)"><span class="no">17</span>🏸 小组广场</div>
+  <div class="nav-item" onclick="go('group-detail',this)"><span class="no">18</span>📍 小组活动+签到</div>
+  <div class="nav-item" onclick="go('group-admin',this)"><span class="no">19</span>🛠 小组管理（组长端）</div>
+  <div class="nav-group">个人中心</div>
+  <div class="nav-item" onclick="go('mine',this)"><span class="no">20</span>👤 我的</div>
+  <div class="nav-group">标注工具</div>
+  <div class="nav-item" id="anno-toggle" onclick="toggleAnno()"><span class="no">✏️</span>标注模式：<span id="anno-state">关</span></div>
+  <div class="nav-item" onclick="exportAnno()"><span class="no">📋</span>导出标注（<span id="anno-count">0</span>）</div>
+  <div id="anno-list"></div>
+</div>
+
+<!-- ========== 手机 ========== -->
+<div class="stage">
+<div class="phone">
+  <div class="statusbar"><span id="status-time">14:40</span><span aria-label="5G 网络，电量充足">●●● 5G&nbsp; 🔋</span></div>
+  <div class="navbar"><span class="back" id="nav-back" onclick="history_back()" aria-label="返回">‹</span><img src="assets/logo-web.svg" alt="" style="width:24px;height:24px;border-radius:50%;background:#fff;padding:1px;margin-right:6px;"><span id="nav-title">自然生活圈</span><span class="more" onclick="toggleMobileMenu()" aria-label="打开页面目录">···</span></div>
+  <div class="toast" id="toast" role="status" aria-live="polite">操作成功</div>
+  <div class="mobile-menu" id="mobile-menu" aria-hidden="true">
+    <button class="menu-backdrop" onclick="toggleMobileMenu(false)" aria-label="关闭页面目录"></button>
+    <div class="menu-panel" role="dialog" aria-modal="true" aria-label="页面目录">
+      <div class="menu-head"><span>页面目录 <small style="font-weight:400;color:#888;">20 个可演示页面</small></span><button class="menu-close" onclick="toggleMobileMenu(false)" aria-label="关闭">×</button></div>
+      <div class="mobile-nav-grid" id="mobile-nav-grid"></div>
+    </div>
+  </div>
+
+  <!-- 01 首页 -->
+  <div class="screen active" id="s-home">
+    <div class="banner">
+      <div class="banner-track" id="banner-track">
+        <div class="slide" style="background:linear-gradient(120deg,#1B5FA8,#23A192 60%,#7CC24D);">
+          <div class="circle"></div>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <img src="assets/logo-web.svg" alt="自然生活圈 LOGO" class="blogo">
+            <div><h3>情系职工 · 真诚服务</h3><p>集团工会"自然生活圈"线上服务平台</p></div>
+          </div>
+        </div>
+        <div class="slide" style="background:linear-gradient(120deg,#23A192,#52C0AD);" onclick="go('date-event')">
+          <div class="circle"></div>
+          <h3>💗 "缘聚中秋"单身职工联谊会</h3>
+          <p>9月13日 · 职工活动中心 · 男女比例 1:1 控制</p>
+          <span class="slink">立即报名 ›</span>
+        </div>
+        <div class="slide" style="background:linear-gradient(120deg,#1B5FA8,#4A90D9);" onclick="go('tour-list')">
+          <div class="circle"></div>
+          <h3>🌿 第三批疗休养报名开启</h3>
+          <p>武夷山康养 4 日线 · 9/15 出发 · 余 12 席</p>
+          <span class="slink">查看路线 ›</span>
+        </div>
+      </div>
+      <div class="dots" id="banner-dots"><i class="on"></i><i></i><i></i></div>
+    </div>
+    <div class="ucard" onclick="go('mine')">
+      <div class="uav">陈<span class="rdot"></span></div>
+      <div><div class="un">陈志强</div><div class="ui">装备公司 · 生产一线 · 工会会员 8 年</div></div>
+      <div class="uarrow">›</div>
+    </div>
+    <div class="ticker" onclick="go('notice-list')">
+      <span class="tk-ico">📢</span>
+      <div class="tk-body" id="ticker-body">
+        <div class="tk-item" style="opacity:1;">关于2026年中秋慰问品发放的通知（9月5日前完成领取确认）</div>
+        <div class="tk-item" style="opacity:0;transform:translateY(18px);">第三批疗休养出行名单公示（公示期 8/25-8/27）</div>
+        <div class="tk-item" style="opacity:0;transform:translateY(18px);">职工心理健康关爱月活动开始了，快来预约咨询</div>
+      </div>
+      <span class="tk-more">更多 ›</span>
+    </div>
+    <div class="quick-wrap">
+      <div class="quick-grid">
+        <div class="quick-card" style="background:linear-gradient(135deg,#23A192,#52C0AD);" onclick="go('date-form1')">
+          <img src="assets/logo-web.svg" alt="" class="wmark">
+          <div class="qi"><svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg></div><div class="qt">缘来有你</div><div class="qd">缘分墙 · 联谊活动</div>
+        </div>
+        <div class="quick-card" style="background:linear-gradient(135deg,#2BA471,#5BC99B);" onclick="go('tour-list')">
+          <img src="assets/logo-web.svg" alt="" class="wmark">
+          <div class="qi"><svg viewBox="0 0 24 24"><path d="M14 6l-3.75 5 2.85 3.8-1.6 1.2C9.81 13.75 7 10 7 10l-6 8h22L14 6z"/></svg></div><div class="qt">疗休养</div><div class="qd">路线查看 · 在线报名</div>
+        </div>
+        <div class="quick-card" style="background:linear-gradient(135deg,#1B5FA8,#4A90D9);" onclick="go('welfare-list')">
+          <img src="assets/logo-web.svg" alt="" class="wmark">
+          <div class="qi"><svg viewBox="0 0 24 24"><path d="M20 6h-2.18c.11-.31.18-.65.18-1 0-1.66-1.34-3-3-3-1.05 0-1.96.54-2.5 1.35l-.5.67-.5-.68C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-5-2c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zM9 4c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm11 15H4v-2h16v2zm0-5H4V8h5.08L7 10.83 8.62 12 11 8.76l1-1.36 1 1.36L15.38 12 17 10.83 14.92 8H20v6z"/></svg></div><div class="qt">福利中心</div><div class="qd">福利通知 · 领取确认</div>
+        </div>
+        <div class="quick-card" style="background:linear-gradient(135deg,#0E93B8,#45B8D6);" onclick="go('group-list')">
+          <img src="assets/logo-web.svg" alt="" class="wmark">
+          <div class="qi"><svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg></div><div class="qt">兴趣小组</div><div class="qd">报名 · 签到 · 动态</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 02 登录 -->
+  <div class="screen" id="s-login">
+    <div style="text-align:center;padding:50px 0 24px;">
+      <img src="assets/logo-web.svg" alt="自然生活圈 LOGO" style="width:92px;height:92px;border-radius:24px;margin:0 auto;display:block;box-shadow:0 6px 18px rgba(30,127,192,.25);">
+      <h3 style="margin-top:14px;">自然生活圈</h3>
+      <p class="muted" style="margin-top:4px;">集团工会官方服务平台 · 仅限在职职工</p>
+    </div>
+    <div class="card">
+      <div class="form-item" style="border-radius:8px 8px 0 0;"><span>手机号</span><span class="v">138****6688</span></div>
+      <div class="form-item"><span>工号</span><span class="v">GH2026098</span></div>
+      <div class="form-item" style="border-radius:0 0 8px 8px;"><span>短信验证码</span><span class="v">● ● ● ● ● ●</span></div>
+    </div>
+    <div class="btn" onclick="go('home');toast('登录成功，欢迎回来')">微信授权登录</div>
+    <p class="muted" style="text-align:center;">登录即代表同意《用户协议》与《隐私政策》<br>离职后账号自动失效，数据不留存</p>
+  </div>
+
+  <!-- 03 通知列表 -->
+  <div class="screen" id="s-notice-list">
+    <div style="display:flex;gap:6px;padding:12px 12px 2px;">
+      <span class="tag tag-r" style="padding:5px 12px;font-size:12px;">全部</span>
+      <span class="tag" style="background:#fff;color:#666;padding:5px 12px;font-size:12px;">文件通知</span>
+      <span class="tag" style="background:#fff;color:#666;padding:5px 12px;font-size:12px;">活动</span>
+      <span class="tag" style="background:#fff;color:#666;padding:5px 12px;font-size:12px;">公示</span>
+      <span class="tag" style="background:#fff;color:#666;padding:5px 12px;font-size:12px;">🔍</span>
+    </div>
+    <div class="list-item" onclick="go('notice-detail')">
+      <div class="t"><span class="unread"></span>关于2026年中秋慰问品发放的通知 <span class="tag tag-o">置顶</span></div>
+      <div class="d"><span><span class="tag tag-r">福利</span><span class="tag tag-o">需回执</span> 已读 82%</span><span>08-27</span></div>
+    </div>
+    <div class="list-item">
+      <div class="t"><span class="unread"></span>第三批疗休养出行名单公示</div>
+      <div class="d"><span><span class="tag tag-b">公示</span></span><span>08-25</span></div>
+    </div>
+    <div class="list-item">
+      <div class="t">关于开展职工心理健康关爱月活动的通知</div>
+      <div class="d"><span><span class="tag tag-g">活动</span></span><span>08-20</span></div>
+    </div>
+    <div class="list-item">
+      <div class="t">工会经费收支管理办法（2026修订版）印发</div>
+      <div class="d"><span><span class="tag tag-r">文件</span> 附件×2</span><span>08-15</span></div>
+    </div>
+    <div class="list-item">
+      <div class="t">集团第十二届职工运动会赛程安排</div>
+      <div class="d"><span><span class="tag tag-g">活动</span></span><span>08-10</span></div>
+    </div>
+  </div>
+
+  <!-- 04 通知详情 -->
+  <div class="screen" id="s-notice-detail">
+    <div style="background:#fff;padding:18px 16px 10px;margin:10px 12px 0;border-radius:12px 12px 0 0;">
+      <h3 style="font-size:16px;line-height:1.5;">关于2026年中秋慰问品发放的通知</h3>
+      <p class="muted" style="margin-top:8px;">集团工会委员会 · 2026-08-27 · 阅读 4,216</p>
+      <div style="margin-top:8px;"><span class="tag tag-r">福利</span><span class="tag tag-o">需回执</span></div>
+    </div>
+    <div class="detail" style="margin-top:0;border-radius:0;">
+      各分工会、全体会员：<br><br>
+      值中秋佳节来临之际，经集团工会委员会研究，决定为全体在职工会会员发放中秋慰问品一份（标准 300 元/人）。请各位于 <b>9月5日前</b> 在"福利中心"完成领取确认，选择自提点及时间段。<br><br>
+      逾期未确认的视为放弃，名额不予保留……
+      <div class="attach">📎 中秋慰问品发放名单.xlsx <span class="muted" style="margin-left:auto;">预览</span></div>
+      <div class="attach">📎 慰问品选品说明.pdf <span class="muted" style="margin-left:auto;">预览</span></div>
+    </div>
+    <div style="background:#fff;margin:0 12px 10px;padding:14px;border-radius:0 0 12px 12px;">
+      <div class="row" style="justify-content:space-between;">
+        <span class="muted">回执情况：全集团已读 82%</span>
+        <span class="muted">我的状态：<b style="color:var(--orange)">未回执</b></span>
+      </div>
+      <div class="prog"><i style="width:82%"></i></div>
+    </div>
+    <div class="btn" onclick="toast('已确认阅读并回执 ✓')">我已阅读，确认回执</div>
+  </div>
+
+  <!-- 05 资料填写·基本信息 -->
+  <div class="screen" id="s-date-form1">
+    <div class="fsteps">
+      <div class="fs on"><i>1</i>基本信息</div><div class="fline"></div><div class="fs"><i>2</i>交友信息</div>
+    </div>
+    <p class="muted" style="text-align:center;padding:8px 30px 0;font-size:11px;">首次进入请先完善资料，提交管理员审核通过后，即可浏览缘分墙</p>
+    <div class="card" style="padding:4px 14px;">
+      <div class="form-item"><span>性别 <span class="req">*</span></span><span class="v">男 ›</span></div>
+      <div class="form-item"><span>出生年月 <span class="req">*</span></span><span class="v">1998-05 ›</span></div>
+      <div class="form-item"><span>生肖属相</span><span class="v">虎 ›</span></div>
+      <div class="form-item"><span>所属星座</span><span class="v">金牛座 ›</span></div>
+      <div class="form-item"><span>籍贯 <span class="req">*</span></span><span class="v">浙江 · 杭州 ›</span></div>
+      <div class="form-item"><span>生活城市 <span class="req">*</span></span><span class="v">杭州 ›</span></div>
+      <div class="form-item"><span>工作岗位 <span class="req">*</span></span><span class="v">装备公司 · 技术岗 ›</span></div>
+      <div class="form-item"><span>毕业院校</span><span class="v">浙江大学 ›</span></div>
+      <div class="form-item"><span>学历 <span class="req">*</span></span><span class="v">本科 ›</span></div>
+      <div class="form-item"><span>身高 <span class="req">*</span></span><span class="v">178 cm ›</span></div>
+      <div class="form-item" style="border:none;"><span>体重</span><span class="v">70 kg ›</span></div>
+    </div>
+    <div class="card">
+      <div style="font-size:12px;color:var(--sub);margin-bottom:8px;">住房情况 <span class="req">*</span></div>
+      <div class="chips">
+        <span class="chip on" onclick="pickChip(this)">已购房</span>
+        <span class="chip" onclick="pickChip(this)">未购房</span>
+      </div>
+      <div style="font-size:12px;color:var(--sub);margin:14px 0 8px;">车辆 <span class="req">*</span></div>
+      <div class="chips">
+        <span class="chip on" onclick="pickChip(this)">已购车</span>
+        <span class="chip" onclick="pickChip(this)">未购车</span>
+      </div>
+      <div style="font-size:12px;color:var(--sub);margin:14px 0 8px;">全年收入 <span class="req">*</span></div>
+      <div class="chips">
+        <span class="chip" onclick="pickChip(this)">10万元以下</span>
+        <span class="chip on" onclick="pickChip(this)">10-20万元</span>
+        <span class="chip" onclick="pickChip(this)">20-30万元</span>
+        <span class="chip" onclick="pickChip(this)">30万元以上</span>
+      </div>
+      <div style="font-size:12px;color:var(--sub);margin:14px 0 8px;">婚姻情况 <span class="req">*</span></div>
+      <div class="chips">
+        <span class="chip on" onclick="pickChip(this)">未婚</span>
+        <span class="chip" onclick="pickChip(this)">离异</span>
+      </div>
+    </div>
+    <div class="btn" onclick="go('date-form2')">下一步 · 填写交友信息</div>
+  </div>
+
+  <!-- 06 资料填写·交友信息 -->
+  <div class="screen" id="s-date-form2">
+    <div class="fsteps">
+      <div class="fs"><i>1</i>基本信息</div><div class="fline"></div><div class="fs on"><i>2</i>交友信息</div>
+    </div>
+    <div class="sec-cap">我的头像 <span class="req">*</span><span class="muted" style="font-weight:400;font-size:11px;">1-5 张，第一张为封面</span></div>
+    <div class="card">
+      <div class="up-grid">
+        <div class="up-box cover">🧑🏻‍💼<span class="badge">封面</span></div>
+        <div class="up-box cover" style="border-style:dashed;border-color:#C9D4DA;">🏃🏻</div>
+        <div class="up-box" onclick="toast('打开相册选择照片')"><span class="ic">＋</span>上传照片</div>
+      </div>
+      <p class="muted" style="font-size:11px;margin-top:8px;">已上传 2/5 · 第一张将作为缘分墙封面展示</p>
+    </div>
+    <div class="card" style="padding:4px 14px;">
+      <div class="form-item"><span>我的昵称 <span class="req">*</span></span><span class="v">山海 ›</span></div>
+      <div class="form-item" style="border:none;"><span>兴趣爱好 <span class="req">*</span></span><span class="v">徒步 · 摄影 · 露营 ›</span></div>
+    </div>
+    <div class="card">
+      <div style="font-size:12px;color:var(--sub);margin-bottom:8px;">个人简介 <span class="req">*</span></div>
+      <div class="farea">90后技术男，工作日认真搬砖，周末上山拍照。性格慢热但靠谱，期待一段从朋友开始的关系。</div>
+      <div style="font-size:12px;color:var(--sub);margin:14px 0 8px;">对另一半要求</div>
+      <div class="farea">真诚善良，热爱生活，在杭州发展。愿意一起探索世界，也享受宅家日常。</div>
+      <div style="font-size:12px;color:var(--sub);margin:14px 0 8px;">我的标签 <span class="req">*</span><span style="font-size:11px;">（选 3-5 个）</span></div>
+      <div class="chips">
+        <span class="chip" onclick="pickChips(this)">运动达人</span>
+        <span class="chip on" onclick="pickChips(this)">户外徒步</span>
+        <span class="chip on" onclick="pickChips(this)">摄影控</span>
+        <span class="chip" onclick="pickChips(this)">美食探店</span>
+        <span class="chip" onclick="pickChips(this)">旅行爱好者</span>
+        <span class="chip" onclick="pickChips(this)">电影迷</span>
+        <span class="chip" onclick="pickChips(this)">音乐发烧友</span>
+        <span class="chip" onclick="pickChips(this)">读书咖</span>
+        <span class="chip" onclick="pickChips(this)">铲屎官</span>
+        <span class="chip" onclick="pickChips(this)">健身达人</span>
+        <span class="chip" onclick="pickChips(this)">烹饪高手</span>
+        <span class="chip" onclick="pickChips(this)">咖啡星人</span>
+        <span class="chip" onclick="pickChips(this)">文艺青年</span>
+        <span class="chip" onclick="pickChips(this)">桌游搭子</span>
+        <span class="chip on" onclick="pickChips(this)">早睡早起</span>
+        <span class="chip" onclick="pickChips(this)">周末充电</span>
+      </div>
+    </div>
+    <div class="card" style="display:flex;align-items:center;gap:8px;font-size:12px;color:#555;">
+      ☑ 本人承诺所填资料真实有效，遵守<a style="color:#23A192;" onclick="toast('查看《文明交友公约》')">《文明交友公约》</a>
+    </div>
+    <div class="btn" onclick="go('date-review')">提交审核</div>
+    <p class="muted" style="text-align:center;padding:0 30px 10px;font-size:11px;">提交后由工会管理员审核（约 1 个工作日），审核通过后资料将对异性可见</p>
+  </div>
+
+  <!-- 07 资料审核 -->
+  <div class="screen" id="s-date-review">
+    <div style="text-align:center;padding:46px 30px 0;">
+      <div style="width:76px;height:76px;border-radius:50%;background:#E9F6F3;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:34px;">⏳</div>
+      <h3 style="margin-top:16px;font-size:17px;">资料审核中</h3>
+      <p class="muted" style="margin-top:8px;line-height:1.9;">已提交工会管理员审核，预计 1 个工作日内完成<br>审核结果将通过消息通知您</p>
+    </div>
+    <div class="card" style="margin-top:20px;">
+      <b style="font-size:13px;">审核通过后</b>
+      <div class="kv" style="margin-top:6px;"><span class="k">①</span><span style="text-align:right;">您的资料将对异性职工可见</span></div>
+      <div class="kv"><span class="k">②</span><span style="text-align:right;">可浏览缘分墙上的异性资料</span></div>
+      <div class="kv"><span class="k">③</span><span style="text-align:right;">可关注心仪的 TA，互选后解锁联系方式</span></div>
+    </div>
+    <div class="btn" onclick="go('date-wall')">（演示）模拟审核通过 →</div>
+    <div class="btn ghost" onclick="go('date-form1')">修改资料</div>
+  </div>
+
+  <!-- 08 缘分墙 -->
+  <div class="screen" id="s-date-wall">
+    <div class="card" style="background:linear-gradient(120deg,#E9F6F3,#FFF);display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <b style="font-size:14px;">💗 缘分墙</b>
+        <p class="muted" style="margin-top:4px;">资料已审核 · 双向可见 · 点 ♡ 关注心仪的 TA</p>
+      </div>
+      <span class="tag tag-g" style="font-size:11px;padding:6px 10px;" onclick="go('date-form1')">我的资料 ✓</span>
+    </div>
+    <div class="fate-grid">
+      <div class="fate-card" onclick="go('date-detail')">
+        <div class="fate-photo" style="background:#E9F3FF">👩🏻‍🏫
+          <span class="heart" onclick="toggleHeart(event,this)"><svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg></span>
+        </div>
+        <div class="fate-info"><div class="n">书瑶 · 26岁</div><p class="muted">能源公司 · 行政岗</p><p class="muted">📚 阅读 ☕ 手冲</p></div>
+      </div>
+      <div class="fate-card" onclick="go('date-mutual')">
+        <div class="fate-photo" style="background:#FFF6E3">👩🏻‍⚕️
+          <span class="mutual">💞 互相关注</span>
+          <span class="heart on" onclick="toggleHeart(event,this)"><svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg></span>
+        </div>
+        <div class="fate-info"><div class="n">晚晴 · 27岁</div><p class="muted">后勤中心 · 医务岗</p><p class="muted">🧘 瑜伽 🐱 养猫</p></div>
+      </div>
+      <div class="fate-card" onclick="go('date-detail')">
+        <div class="fate-photo" style="background:#F3EFFF">👩🏻‍💻
+          <span class="heart" onclick="toggleHeart(event,this)"><svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg></span>
+        </div>
+        <div class="fate-info"><div class="n">安然 · 25岁</div><p class="muted">财务共享中心 · 财务岗</p><p class="muted">🎹 钢琴 🍰 烘焙</p></div>
+      </div>
+      <div class="fate-card" onclick="go('date-detail')">
+        <div class="fate-photo" style="background:#E9FBEF">👩🏻‍💼
+          <span class="heart" onclick="toggleHeart(event,this)"><svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg></span>
+        </div>
+        <div class="fate-info"><div class="n">静怡 · 29岁</div><p class="muted">集团本部 · 人力岗</p><p class="muted">🎬 电影 🧗 攀岩</p></div>
+      </div>
+    </div>
+    <div class="btn ghost" onclick="go('date-event')">🎉 线下联谊活动（9月场报名中）</div>
+    <p class="muted" style="text-align:center;padding:0 30px 10px;font-size:11px;">互相关注后解锁联系方式与更多照片 · 平台不开放私聊 · 《文明交友公约》</p>
+  </div>
+
+  <!-- 09 缘分资料详情 -->
+  <div class="screen" id="s-date-detail">
+    <div class="dt-photo" style="background:linear-gradient(160deg,#E9F3FF,#E9F6F3);">👩🏻‍🏫
+      <span class="pnum">封面 · 1/4</span>
+      <span class="heart" onclick="toggleHeart(event,this)"><svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg></span>
+    </div>
+    <div class="card">
+      <div class="row" style="justify-content:space-between;">
+        <div><b style="font-size:18px;">书瑶</b> <span class="muted">· 26岁 · 165cm</span></div>
+        <span class="tag tag-g">✓ 工会已认证</span>
+      </div>
+      <div class="chips" style="margin-top:8px;">
+        <span class="chip on" style="cursor:default;">读书咖</span>
+        <span class="chip on" style="cursor:default;">咖啡星人</span>
+        <span class="chip on" style="cursor:default;">文艺青年</span>
+        <span class="chip on" style="cursor:default;">早睡早起</span>
+      </div>
+    </div>
+    <div class="sec-cap">交友信息</div>
+    <div class="card">
+      <div style="font-size:12px;color:var(--sub);">个人简介</div>
+      <p style="font-size:12px;color:#444;line-height:1.8;margin-top:4px;">能源公司行政岗，朝九晚五也爱仪式感。周末泡图书馆或咖啡馆，偶尔看展，相信细水长流的感情。</p>
+      <div class="kv" style="margin-top:10px;"><span class="k">兴趣爱好</span><span>阅读 · 手冲咖啡 · 看展</span></div>
+      <div style="font-size:12px;color:var(--sub);margin-top:10px;">对另一半要求</div>
+      <p style="font-size:12px;color:#444;line-height:1.8;margin-top:4px;">25-30岁，在杭稳定工作，真诚有责任心，聊得来最重要。</p>
+    </div>
+    <div class="sec-cap">基本信息</div>
+    <div class="card" style="padding-top:6px;padding-bottom:6px;">
+      <div class="kv"><span class="k">性别 / 出生年月</span><span>女 · 2000-03</span></div>
+      <div class="kv"><span class="k">籍贯 / 生活城市</span><span>浙江绍兴 · 杭州</span></div>
+      <div class="kv"><span class="k">工作岗位</span><span>能源公司 · 行政岗</span></div>
+      <div class="kv"><span class="k">学历 / 毕业院校</span><span>本科 · 浙江工商大学</span></div>
+      <div class="kv"><span class="k">身高 / 体重</span><span>165cm · 50kg</span></div>
+      <div class="kv"><span class="k">住房 / 车辆</span><span>已购房 · 未购车</span></div>
+      <div class="kv"><span class="k">全年收入</span><span>10-20万元</span></div>
+      <div class="kv"><span class="k">生肖 / 星座</span><span>兔 · 双鱼座</span></div>
+      <div class="kv"><span class="k">婚姻情况</span><span>未婚</span></div>
+    </div>
+    <p class="muted" style="text-align:center;padding:4px 30px 0;font-size:11px;">🔒 联系方式与更多照片将在互相关注后解锁</p>
+    <div class="btn" onclick="toast('已关注 💗 等待对方回应，互选后自动解锁联系方式')">💗 关注 TA</div>
+    <div class="btn gray" onclick="toast('已收到您的举报，干事将在1个工作日内核实')">举报不当信息</div>
+  </div>
+
+  <!-- 10 互选成功（解锁） -->
+  <div class="screen" id="s-date-mutual">
+    <div style="background:linear-gradient(135deg,#23A192,#52C0AD);margin:12px;border-radius:12px;color:#fff;padding:20px 18px;text-align:center;">
+      <div style="font-size:34px;">💞</div>
+      <h3 style="margin-top:6px;font-size:16px;">你们已互相关注</h3>
+      <p style="font-size:11px;margin-top:6px;opacity:.9;">联系方式与更多照片已解锁，请文明真诚交友</p>
+    </div>
+    <div class="sec-cap">TA 的联系方式</div>
+    <div class="card" style="padding-top:6px;padding-bottom:6px;">
+      <div class="kv"><span class="k">昵称</span><span>晚晴 · 27岁</span></div>
+      <div class="kv"><span class="k">手机号</span><span>138 5712 6620 <b style="color:#23A192;font-weight:600;" onclick="toast('手机号已复制')">复制</b></span></div>
+      <div class="kv"><span class="k">微信号</span><span>wanqing_1127 <b style="color:#23A192;font-weight:600;" onclick="toast('微信号已复制')">复制</b></span></div>
+      <div class="kv"><span class="k">单位 / 岗位</span><span>后勤中心 · 医务岗</span></div>
+    </div>
+    <div class="sec-cap">更多照片（5）</div>
+    <div class="card">
+      <div class="album">
+        <div class="al" style="background:#FFF6E3;">👩🏻‍⚕️</div>
+        <div class="al" style="background:#E9F6F3;">🧘🏻‍♀️</div>
+        <div class="al" style="background:#E3F2FA;">🐱</div>
+        <div class="al" style="background:#F3EFFF;">🌸</div>
+        <div class="al" style="background:#FFF0F3;">🍰</div>
+        <div class="al" style="background:#E9FBEF;">⛺</div>
+      </div>
+    </div>
+    <p class="muted" style="text-align:center;padding:2px 30px 0;font-size:11px;">联系方式仅互选双方可见，请勿外传 · 如有不当言行请 <b style="color:#23A192;" onclick="toast('已收到您的举报，干事将核实处理')">举报</b></p>
+    <div class="btn ghost" onclick="go('date-wall')">返回缘分墙</div>
+  </div>
+
+  <!-- 11 联谊活动 -->
+  <div class="screen" id="s-date-event">
+    <div style="height:120px;background:linear-gradient(120deg,#1B5FA8,#23A192);margin:12px;border-radius:12px;color:#fff;padding:18px;">
+      <h3>"缘聚中秋"单身职工联谊会</h3>
+      <p style="font-size:12px;margin-top:8px;opacity:.9;">9月13日（周六）14:00 · 集团职工活动中心 3F</p>
+    </div>
+    <div class="card">
+      <div class="form-item"><span>活动名额</span><span class="v">60人（男女各30，比例控制）</span></div>
+      <div class="form-item"><span>已报名</span><span class="v">男 24 / 女 19</span></div>
+      <div class="form-item"><span>报名条件</span><span class="v">单身在职职工 · 资料已审核</span></div>
+      <div class="form-item"><span>活动形式</span><span class="v">破冰游戏 · 茶歇 · 自由交流</span></div>
+      <div class="form-item" style="border:none;"><span>诚信承诺</span><span class="v">☑ 已阅读并同意</span></div>
+    </div>
+    <div class="card">
+      <b style="font-size:13px;">活动流程</b>
+      <p class="muted" style="line-height:2;margin-top:6px;">14:00 签到入场 → 14:30 破冰互动 → 15:30 分组游戏 → 16:30 心动互选 → 17:00 合影结束</p>
+    </div>
+    <div class="btn" onclick="toast('报名成功，审核结果将通过消息通知')">立即报名（剩余 17 席）</div>
+  </div>
+
+  <!-- 08 疗休养路线 -->
+  <div class="screen" id="s-tour-list">
+    <div class="card" style="background:linear-gradient(120deg,#E6F6EF,#fff);">
+      <b style="font-size:14px;">🌿 2026年度疗休养</b>
+      <div class="stat-row" style="margin-top:8px;">
+        <div><div class="num">5</div><div class="muted">可选路线</div></div>
+        <div><div class="num">3</div><div class="muted">开放批次</div></div>
+        <div><div class="num" style="color:var(--green)">0/1</div><div class="muted">我今年已参加</div></div>
+      </div>
+      <p class="muted" style="margin-top:4px;">💡 每人每年限参加 1 次 · 一线职工优先 · 费用标准 460元/人·天</p>
+    </div>
+    <div class="list-item" onclick="go('tour-detail')">
+      <div style="height:70px;border-radius:8px;background:linear-gradient(120deg,#8FD3B6,#E6F6EF);display:flex;align-items:center;padding:0 14px;font-size:22px;margin-bottom:8px;">⛰️ <b style="font-size:14px;margin-left:8px;">武夷山康养 4 日线</b></div>
+      <div class="d"><span><span class="tag tag-g">康养理疗</span><span class="tag tag-b">红色教育</span> 9/15-9/18</span><span style="color:var(--red);font-weight:600;">余 12 席</span></div>
+    </div>
+    <div class="list-item">
+      <div style="height:70px;border-radius:8px;background:linear-gradient(120deg,#9CC4F0,#E8F0FE);display:flex;align-items:center;padding:0 14px;font-size:22px;margin-bottom:8px;">🌊 <b style="font-size:14px;margin-left:8px;">厦门滨海疗养 5 日线</b></div>
+      <div class="d"><span><span class="tag tag-g">海滨休养</span><span class="tag tag-o">健康讲座</span> 10/12-10/16</span><span style="color:var(--orange);font-weight:600;">余 3 席</span></div>
+    </div>
+    <div class="list-item">
+      <div style="height:70px;border-radius:8px;background:linear-gradient(120deg,#A8D8C8,#E9F6F3);display:flex;align-items:center;padding:0 14px;font-size:22px;margin-bottom:8px;">♨️ <b style="font-size:14px;margin-left:8px;">温泉微疗养 2 日线</b></div>
+      <div class="d"><span><span class="tag tag-g">短途</span><span class="tag tag-b">康复理疗</span> 多批次</span><span style="color:var(--green);font-weight:600;">名额充足</span></div>
+    </div>
+  </div>
+
+  <!-- 09 路线详情+报名 -->
+  <div class="screen" id="s-tour-detail">
+    <div style="height:120px;background:linear-gradient(120deg,#5BBF95,#8FD3B6);display:flex;align-items:flex-end;padding:16px;color:#fff;">
+      <div><h3>武夷山康养 4 日线</h3><p style="font-size:11px;opacity:.9;margin-top:4px;">省总工会命名疗休养基地 · 9/15-9/18</p></div>
+    </div>
+    <div class="card">
+      <b style="font-size:13px;">行程安排</b>
+      <p class="muted" style="line-height:2;margin-top:6px;">D1 集合出发·入住疗养院 → D2 太极晨练·康复理疗·健康讲座 → D3 红色教育基地参观·茶山体验 → D4 自由活动·返程</p>
+      <div style="margin-top:8px;"><span class="tag tag-g">针灸推拿</span><span class="tag tag-b">红色教育</span><span class="tag tag-o">乡村振兴体验</span></div>
+    </div>
+    <div class="card">
+      <b style="font-size:13px;">费用与名额</b>
+      <div class="form-item" style="padding:10px 0;"><span>费用标准</span><span class="v">460元/人·天（工会经费列支）</span></div>
+      <div class="form-item" style="padding:10px 0;border:none;"><span>本批名额</span><span class="v" style="color:var(--red);font-weight:600;">30 人 · 剩余 12 席</span></div>
+    </div>
+    <div class="card">
+      <b style="font-size:13px;">报名信息</b>
+      <div class="form-item" style="padding:10px 0;"><span>优先类别</span><span class="v">生产一线职工 ✓</span></div>
+      <div class="form-item" style="padding:10px 0;"><span>健康信息</span><span class="v">无基础病 · 无药物过敏</span></div>
+      <div class="form-item" style="padding:10px 0;border:none;"><span>紧急联系人</span><span class="v">王** 139****2233</span></div>
+    </div>
+    <div class="btn" onclick="toast('报名已提交，等待分工会干事审核')">提交报名</div>
+  </div>
+
+  <!-- 10 我的报名 -->
+  <div class="screen" id="s-tour-mine">
+    <div class="steps">
+      <div class="step done">提交报名</div><div class="step done">资格审核</div><div class="step">名单公示</div><div class="step">出团通知</div><div class="step">成行</div>
+    </div>
+    <div class="list-item">
+      <div class="t">武夷山康养 4 日线 <span class="tag tag-o" style="float:right;">审核中</span></div>
+      <div class="d"><span>批次：9/15-9/18 · 优先类别：一线职工</span><span>08-26 提交</span></div>
+      <p class="muted" style="margin-top:8px;">⏳ 分工会干事复核中，预计 2 个工作日内反馈</p>
+    </div>
+    <div class="list-item">
+      <div class="t">温泉微疗养 2 日线（2025年）<span class="tag tag-g" style="float:right;">已完成</span></div>
+      <div class="d"><span>批次：2025/11/08-11/09</span><span>已评价 ⭐5</span></div>
+    </div>
+    <div class="card">
+      <b style="font-size:13px;">📊 年度疗休养统计（全集团）</b>
+      <div class="stat-row" style="margin-top:8px;">
+        <div><div class="num">18%</div><div class="muted">参疗比例</div></div>
+        <div><div class="num">86%</div><div class="muted">一线职工占比</div></div>
+        <div><div class="num">4.8</div><div class="muted">满意度均分</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 11 福利中心 -->
+  <div class="screen" id="s-welfare-list">
+    <div class="card" style="background:linear-gradient(120deg,#FDF3E7,#fff);display:flex;justify-content:space-between;align-items:center;">
+      <div><b style="font-size:14px;">🎁 我的福利</b><p class="muted" style="margin-top:4px;">待领取 2 项 · 历史已领 8 项</p></div>
+      <div style="font-size:28px;">🧧</div>
+    </div>
+    <div class="sec-title">待领取</div>
+    <div class="list-item" onclick="go('welfare-detail')">
+      <div class="t">🥮 中秋慰问品礼包 <span class="tag tag-r" style="float:right;">待确认</span></div>
+      <div class="d"><span>标准 300元/人 · 9月5日截止</span><span style="color:var(--red)">去领取 ›</span></div>
+    </div>
+    <div class="list-item">
+      <div class="t">🎬 电影票兑换券 ×2 <span class="tag tag-o" style="float:right;">待核销</span></div>
+      <div class="d"><span>电子券码 · 有效期至 10/31</span><span>出示券码 ›</span></div>
+    </div>
+    <div class="sec-title">已领取</div>
+    <div class="list-item">
+      <div class="t" style="color:#999;">🎂 生日蛋糕券（8月）<span class="tag tag-g" style="float:right;">已核销</span></div>
+      <div class="d"><span>08-12 领取 · 门店核销</span><span></span></div>
+    </div>
+    <div class="list-item">
+      <div class="t" style="color:#999;">🍉 夏日送清凉慰问品<span class="tag tag-g" style="float:right;">已签收</span></div>
+      <div class="d"><span>07-20 领取 · 电子签名确认</span><span></span></div>
+    </div>
+  </div>
+
+  <!-- 12 福利领取确认 -->
+  <div class="screen" id="s-welfare-detail">
+    <div style="background:linear-gradient(120deg,#1B5FA8,#23A192);margin:12px;border-radius:12px;color:#fff;padding:20px;text-align:center;">
+      <div style="font-size:44px;">🥮</div>
+      <h3 style="margin-top:8px;">中秋慰问品礼包</h3>
+      <p style="font-size:11px;opacity:.9;margin-top:4px;">月饼礼盒 + 粮油组合 · 标准 300 元/人</p>
+    </div>
+    <div class="card">
+      <b style="font-size:13px;">领取方式</b>
+      <div class="form-item" style="padding:10px 0;"><span>🔘 自提</span><span class="v">本部食堂门口 · 9/2 上午</span></div>
+      <div class="form-item" style="padding:10px 0;border:none;"><span>⚪ 授权代领</span><span class="v">登记代领人信息 ›</span></div>
+    </div>
+    <div class="card">
+      <b style="font-size:13px;">✍️ 电子签收</b>
+      <div style="height:90px;border:1px dashed #ccc;border-radius:8px;margin-top:10px;display:flex;align-items:center;justify-content:center;color:#bbb;font-size:12px;">手写签名区</div>
+      <p class="muted" style="margin-top:8px;">签收记录将存档，作为工会经费发放审计依据</p>
+    </div>
+    <div class="btn" onclick="toast('领取确认成功！请按所选时间自提 🎁')">确认领取</div>
+  </div>
+
+  <!-- 13 小组广场 -->
+  <div class="screen" id="s-group-list">
+    <div style="display:flex;gap:6px;padding:12px 12px 2px;">
+      <span class="tag tag-r" style="padding:5px 12px;font-size:12px;">全部</span>
+      <span class="tag" style="background:#fff;color:#666;padding:5px 12px;font-size:12px;">体育</span>
+      <span class="tag" style="background:#fff;color:#666;padding:5px 12px;font-size:12px;">文艺</span>
+      <span class="tag" style="background:#fff;color:#666;padding:5px 12px;font-size:12px;">学习</span>
+      <span class="tag" style="background:#fff;color:#666;padding:5px 12px;font-size:12px;">公益</span>
+    </div>
+    <div class="list-item" onclick="go('group-detail')">
+      <div class="row">
+        <div class="avatar" style="background:#E8F0FE">🏸</div>
+        <div style="flex:1;"><div class="t" style="margin:0;">飞扬羽毛球社 <span class="tag tag-g">已加入</span></div>
+        <p class="muted" style="margin-top:4px;">成员 86人 · 每周三/六活动 · 本月活动 4 场</p></div>
+        <span class="muted">›</span>
+      </div>
+    </div>
+    <div class="list-item">
+      <div class="row">
+        <div class="avatar" style="background:#FDF3E7">📷</div>
+        <div style="flex:1;"><div class="t" style="margin:0;">光影摄影协会</div>
+        <p class="muted" style="margin-top:4px;">成员 54人 · 月度外拍+评片会</p></div>
+        <span class="tag tag-r">申请加入</span>
+      </div>
+    </div>
+    <div class="list-item">
+      <div class="row">
+        <div class="avatar" style="background:#E6F6EF">📚</div>
+        <div style="flex:1;"><div class="t" style="margin:0;">悦读读书会</div>
+        <p class="muted" style="margin-top:4px;">成员 42人 · 双周共读分享</p></div>
+        <span class="tag tag-r">申请加入</span>
+      </div>
+    </div>
+    <div class="list-item">
+      <div class="row">
+        <div class="avatar" style="background:#E9F6F3">🎤</div>
+        <div style="flex:1;"><div class="t" style="margin:0;">职工合唱团</div>
+        <p class="muted" style="margin-top:4px;">成员 60人 · 备战元旦文艺汇演</p></div>
+        <span class="tag tag-r">申请加入</span>
+      </div>
+    </div>
+    <div class="btn ghost" onclick="toast('小组成立需≥10人、有负责人及年度计划，提交集团工会审核')">+ 申请成立新小组</div>
+  </div>
+
+  <!-- 14 小组详情+签到 -->
+  <div class="screen" id="s-group-detail">
+    <div style="background:linear-gradient(120deg,#1B5FA8,#4A90D9);padding:22px 16px;color:#fff;">
+      <div class="row"><div class="avatar" style="background:rgba(255,255,255,.2);color:#fff;">🏸</div>
+      <div><h3>飞扬羽毛球社</h3><p style="font-size:11px;opacity:.9;margin-top:4px;">成员 86 人 · 组长：李教练 · 2021年成立</p></div></div>
+    </div>
+    <div class="sec-title">近期活动<span class="more-t" onclick="go('group-admin')">我是组长 ›</span></div>
+    <div class="card" style="border-left:4px solid var(--red);">
+      <div class="row" style="justify-content:space-between;"><b style="font-size:14px;">周三常规训练</b><span class="tag tag-r">已报名</span></div>
+      <p class="muted" style="margin:8px 0;">今晚 19:00-21:00 · 职工体育中心 3 号场 · 18/20 人</p>
+      <div class="row">
+        <div class="btn" style="flex:1;margin:0;padding:9px;" onclick="toast('签到成功 ✓ 已记录本月第 6 次参与')">📍 扫码签到</div>
+        <div class="btn ghost" style="flex:1;margin:0 0 0 8px;padding:9px;" onclick="toast('口令签到：请输入 4 位活动口令')">🔢 口令签到</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="row" style="justify-content:space-between;"><b style="font-size:14px;">"迎新杯"混合双打赛</b><span class="tag tag-b">报名中</span></div>
+      <p class="muted" style="margin:8px 0;">9/20（周六）全天 · 体育中心 · 限 32 人 · 报名 21/32</p>
+      <div class="btn" style="margin:0;padding:9px;" onclick="toast('报名成功，赛前将推送赛程')">立即报名</div>
+    </div>
+    <div class="sec-title">小组动态</div>
+    <div class="card">
+      <div class="row"><div class="avatar" style="background:#E8F0FE;font-size:14px;">王</div>
+      <div><b style="font-size:13px;">王晓明</b> <span class="muted">· 2天前</span><p class="muted" style="margin-top:4px;">上周外训课收获满满，附训练照 📸（相册 12 张）</p></div></div>
+    </div>
+    <div class="card">
+      <b style="font-size:13px;">💰 经费公示</b>
+      <p class="muted" style="margin-top:6px;line-height:1.8;">8月场地费 1,200 元（工会经费补助 800 + AA 400）· 明细已组内公示 ✓</p>
+    </div>
+  </div>
+
+  <!-- 15 小组管理 -->
+  <div class="screen" id="s-group-admin">
+    <div class="card" style="background:linear-gradient(120deg,#E9F4FB,#fff);">
+      <b style="font-size:14px;">🛠 组长工作台 · 飞扬羽毛球社</b>
+      <div class="stat-row" style="margin-top:10px;">
+        <div><div class="num">86</div><div class="muted">成员</div></div>
+        <div><div class="num">4</div><div class="muted">本月活动</div></div>
+        <div><div class="num">78%</div><div class="muted">签到率</div></div>
+        <div><div class="num">3</div><div class="muted">待审批</div></div>
+      </div>
+    </div>
+    <div class="card" style="text-align:center;">
+      <b style="font-size:13px;">今晚活动签到码</b>
+      <div class="qr"></div>
+      <p class="muted">有效期 19:00-19:30 · 已签到 14/18 人</p>
+      <p class="muted" style="margin-top:4px;">备用口令：<b style="color:var(--red);font-size:16px;">8 2 6 6</b></p>
+    </div>
+    <div class="card">
+      <b style="font-size:13px;">入组申请（3）</b>
+      <div class="form-item" style="padding:10px 0;"><span>张晓峰 · 装备公司</span><span><span class="tag tag-g">同意</span> <span class="tag" style="background:#F5F5F5;color:#999;">婉拒</span></span></div>
+      <div class="form-item" style="padding:10px 0;border:none;"><span>刘一凡 · 集团本部</span><span><span class="tag tag-g">同意</span> <span class="tag" style="background:#F5F5F5;color:#999;">婉拒</span></span></div>
+    </div>
+    <div class="btn" onclick="toast('进入活动发布表单（时间/场地/人数/费用）')">+ 发布新活动</div>
+    <div class="btn gray" onclick="toast('本月签到明细已导出（Excel）')">导出签到统计</div>
+  </div>
+
+  <!-- 16 我的 -->
+  <div class="screen" id="s-mine">
+    <div style="background:linear-gradient(120deg,#1B5FA8,#1E7FC0 60%,#23A192);padding:24px 16px;color:#fff;display:flex;align-items:center;gap:14px;">
+      <div class="avatar" style="background:rgba(255,255,255,.25);color:#fff;font-size:22px;">陈</div>
+      <div><b style="font-size:17px;">陈志强</b><p style="font-size:11px;opacity:.9;margin-top:4px;">装备公司 · 生产一线 · 会员 8 年 · 积分 1,260</p></div>
+    </div>
+    <div class="card">
+      <div class="form-item" onclick="go('tour-mine')"><span>🌿 我的疗休养</span><span class="v">审核中 ×1 ›</span></div>
+      <div class="form-item" onclick="go('welfare-list')"><span>🎁 我的福利</span><span class="v">待领取 ×2 ›</span></div>
+      <div class="form-item" onclick="go('group-list')"><span>🏸 我的小组</span><span class="v">已加入 3 个 ›</span></div>
+      <div class="form-item"><span>💗 我的交友资料</span><span class="v">已认证 · 可见 ›</span></div>
+      <div class="form-item" style="border:none;"><span>📅 我的活动/签到记录</span><span class="v">本月参与 6 次 ›</span></div>
+    </div>
+    <div class="card">
+      <div class="form-item"><span>🔔 消息中心</span><span class="v"><span class="dot"></span> 3 条未读 ›</span></div>
+      <div class="form-item"><span>🎫 积分商城</span><span class="v">1,260 分可兑换 ›</span></div>
+      <div class="form-item"><span>📞 联系工会</span><span class="v">工会信箱 · 热线 ›</span></div>
+      <div class="form-item" style="border:none;"><span>⚙️ 设置</span><span class="v">大字体模式 · 隐私 ›</span></div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<script>
+var titles={home:"自然生活圈",login:"登录", 'notice-list':"通知公告", 'notice-detail':"通知详情",
+ 'date-form1':"填写基本信息", 'date-form2':"填写交友信息", 'date-review':"资料审核",
+ 'date-wall':"缘来有你", 'date-detail':"缘分资料详情", 'date-mutual':"互选成功", 'date-event':"联谊活动",
+ 'tour-list':"疗休养", 'tour-detail':"路线详情", 'tour-mine':"我的报名",
+ 'welfare-list':"福利中心", 'welfare-detail':"领取确认",
+ 'group-list':"兴趣小组", 'group-detail':"小组详情", 'group-admin':"组长工作台", mine:"我的"};
+var pageOrder=['home','login','notice-list','notice-detail','date-form1','date-form2','date-review','date-wall','date-detail','date-mutual','date-event','tour-list','tour-detail','tour-mine','welfare-list','welfare-detail','group-list','group-detail','group-admin','mine'];
+var stack=['home'];
+var currentScreen='home';
+function go(id, el){
+  document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});
+  var sc=document.getElementById('s-'+id); if(sc){sc.classList.add('active');sc.scrollTop=0;}
+  else{return;}
+  currentScreen=id;
+  document.getElementById('nav-title').innerText=titles[id]||'自然生活圈';
+  document.getElementById('nav-back').style.visibility=(id==='home'||id==='login')?'hidden':'visible';
+  document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active');});
+  if(el)el.classList.add('active');
+  else{var items=document.querySelectorAll('.nav-item');items.forEach(function(n){if(n.getAttribute('onclick')&&n.getAttribute('onclick').indexOf("'"+id+"'")>-1)n.classList.add('active');});}
+  if(stack[stack.length-1]!==id)stack.push(id);
+  document.querySelectorAll('.mobile-nav-link').forEach(function(n){n.classList.toggle('on',n.dataset.page===id);});
+  document.title=(titles[id]||'自然生活圈')+' · H5 交互演示';
+  if(history.replaceState)history.replaceState(null,'','#'+id);
+  toggleMobileMenu(false);
+  renderMarkers();
+}
+function history_back(){ if(stack.length>1){stack.pop();go(stack[stack.length-1]);} }
+function toggleMobileMenu(force){
+  var menu=document.getElementById('mobile-menu');
+  var open=typeof force==='boolean'?force:!menu.classList.contains('open');
+  menu.classList.toggle('open',open);menu.setAttribute('aria-hidden',open?'false':'true');
+  if(open){var active=menu.querySelector('.mobile-nav-link.on')||menu.querySelector('.mobile-nav-link');if(active)active.focus();}
+}
+function toast(msg){
+  var t=document.getElementById('toast');t.innerText=msg;t.style.display='block';
+  setTimeout(function(){t.style.display='none';},2000);
+}
+/* 缘来有你：关注爱心 + 选项 chips */
+function toggleHeart(e,el){
+  e.stopPropagation();
+  var on=el.classList.toggle('on');
+  toast(on?'已关注 💗 等待对方回应':'已取消关注');
+}
+function pickChip(el){
+  el.parentNode.querySelectorAll('.chip').forEach(function(c){c.classList.remove('on');});
+  el.classList.add('on');
+}
+function pickChips(el){ el.classList.toggle('on'); }
+/* Banner 轮播 */
+(function(){
+  var track=document.getElementById('banner-track'), dots=document.getElementById('banner-dots').children, cur=0, n=3;
+  setInterval(function(){
+    cur=(cur+1)%n;
+    track.style.transform='translateX(-'+(cur*100)+'%)';
+    for(var i=0;i<n;i++)dots[i].className=(i===cur?'on':'');
+  },3500);
+})();
+/* 公告跑马灯（纵向滚动） */
+(function(){
+  var items=document.getElementById('ticker-body').children, cur=0, n=items.length;
+  setInterval(function(){
+    var prev=cur; cur=(cur+1)%n;
+    items[prev].style.opacity='0'; items[prev].style.transform='translateY(-18px)';
+    items[cur].style.opacity='1'; items[cur].style.transform='translateY(0)';
+    setTimeout(function(){ if(items[prev].style.opacity==='0'){items[prev].style.transform='translateY(18px)';} },450);
+  },3000);
+})();
+
+/* ================= 标注模式 ================= */
+var annoMode=false, annos=[], annoSeq=0;
+try{ annos=JSON.parse(localStorage.getItem('gh_annos')||'[]'); annoSeq=annos.reduce(function(m,a){return Math.max(m,a.id);},0); }catch(e){}
+function saveAnnos(){ try{localStorage.setItem('gh_annos',JSON.stringify(annos));}catch(e){} }
+function toggleAnno(){
+  annoMode=!annoMode;
+  document.querySelector('.phone').classList.toggle('annotating',annoMode);
+  document.getElementById('anno-state').innerText=annoMode?'开':'关';
+  document.getElementById('anno-toggle').classList.toggle('anno-on',annoMode);
+  toast(annoMode?'标注模式已开启：点击页面任意位置添加修改意见':'标注模式已关闭');
+}
+document.querySelector('.phone').addEventListener('click',function(e){
+  if(!annoMode)return;
+  if(e.target.classList&&e.target.classList.contains('marker'))return;
+  e.preventDefault(); e.stopPropagation();
+  var r=document.querySelector('.phone').getBoundingClientRect();
+  var x=((e.clientX-r.left)/r.width*100).toFixed(1), y=((e.clientY-r.top)/r.height*100).toFixed(1);
+  var txt=prompt('📝 在「'+ (titles[currentScreen]||currentScreen) +'」此处输入修改意见：');
+  if(!txt||!txt.trim())return;
+  var desc=(e.target.innerText||e.target.tagName||'').replace(/\s+/g,' ').trim().slice(0,24);
+  annos.push({id:++annoSeq,screen:currentScreen,title:titles[currentScreen]||currentScreen,x:x,y:y,text:txt.trim(),desc:desc});
+  saveAnnos(); renderMarkers(); renderAnnoList();
+},true);
+function renderMarkers(){
+  document.querySelectorAll('.marker').forEach(function(m){m.remove();});
+  var phone=document.querySelector('.phone');
+  annos.filter(function(a){return a.screen===currentScreen;}).forEach(function(a){
+    var m=document.createElement('div');m.className='marker';m.innerText=a.id;
+    m.style.left=a.x+'%';m.style.top=a.y+'%';m.title=a.text;
+    m.addEventListener('click',function(e){
+      e.preventDefault();e.stopPropagation();
+      var nt=prompt('修改标注 #'+a.id+'（清空并确定 = 删除）：',a.text);
+      if(nt===null)return;
+      if(!nt.trim()){ annos=annos.filter(function(x){return x.id!==a.id;}); }
+      else{ a.text=nt.trim(); }
+      saveAnnos();renderMarkers();renderAnnoList();
+    },true);
+    phone.appendChild(m);
+  });
+}
+function renderAnnoList(){
+  document.getElementById('anno-count').innerText=annos.length;
+  var box=document.getElementById('anno-list');box.innerHTML='';
+  annos.forEach(function(a){
+    var d=document.createElement('div');d.className='anno-item';
+    d.innerHTML='<span class="ax" title="删除">×</span><span class="ap">#'+a.id+' '+a.title+'</span><br>'+a.text;
+    d.querySelector('.ax').onclick=function(){ annos=annos.filter(function(x){return x.id!==a.id;}); saveAnnos();renderMarkers();renderAnnoList(); };
+    d.onclick=function(ev){ if(ev.target.classList.contains('ax'))return; go(a.screen); };
+    box.appendChild(d);
+  });
+}
+function exportAnno(){
+  if(!annos.length){toast('还没有标注，先开启标注模式点几下吧');return;}
+  var out='【工会小程序原型修改标注 · 共'+annos.length+'条】\n';
+  annos.forEach(function(a){ out+='\n#'+a.id+' ['+a.title+']'+(a.desc?(' 「'+a.desc+'」'):'')+'\n  → '+a.text+'\n'; });
+  out+='\n请按以上标注逐条修改原型。';
+  function done(){toast('标注已复制，粘贴发给 AI 即可');}
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(out).then(done,function(){fallback();}); }
+  else fallback();
+  function fallback(){var ta=document.createElement('textarea');ta.value=out;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');done();}catch(e){prompt('请手动复制：',out);}ta.remove();}
+}
+/* 初始化移动端页面目录、键盘交互、当前时间与可分享的页面锚点。 */
+(function initDemo(){
+  var grid=document.getElementById('mobile-nav-grid');
+  pageOrder.forEach(function(id,i){
+    var b=document.createElement('button');b.className='mobile-nav-link'+(id==='home'?' on':'');b.dataset.page=id;
+    b.innerText=String(i+1).padStart(2,'0')+' · '+titles[id];b.onclick=function(){go(id);};grid.appendChild(b);
+  });
+  document.querySelectorAll('[onclick]').forEach(function(el){
+    if(!/^(BUTTON|A|INPUT|SELECT|TEXTAREA)$/.test(el.tagName)){el.setAttribute('role','button');if(!el.hasAttribute('tabindex'))el.tabIndex=0;}
+  });
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Escape')toggleMobileMenu(false);
+    if((e.key==='Enter'||e.key===' ')&&document.activeElement&&document.activeElement.getAttribute('role')==='button'){e.preventDefault();document.activeElement.click();}
+  });
+  function updateTime(){var now=new Date();document.getElementById('status-time').innerText=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');}
+  updateTime();setInterval(updateTime,30000);
+  var initial=location.hash.slice(1);if(pageOrder.indexOf(initial)>-1)go(initial);
+  else{document.getElementById('nav-back').style.visibility='hidden';}
+})();
+renderMarkers();renderAnnoList();
+</script>
+</body>
+</html>
+
